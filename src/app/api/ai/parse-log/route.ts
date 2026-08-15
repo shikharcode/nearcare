@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { nlpModel } from "@/lib/gemini";
+import { generateWithFallback } from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
@@ -98,7 +98,7 @@ Example output:
 }`;
 
   try {
-    const result = await nlpModel.generateContent(prompt);
+    const result = await generateWithFallback(prompt, { json: true });
     const raw = result.response.text().trim();
 
     let parsed: Record<string, unknown>;

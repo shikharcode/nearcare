@@ -1,16 +1,13 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerateContentResult } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// ── Model registry — one instance per task, spread across free tiers ─────────
+// ── Model registry ────────────────────────────────────────────────────────────
 //
-// Model               RPD    Used for
-// gemini-2.5-flash-lite  20  AI Chat (quality matters most)
-// gemini-3.7-flash       20  Weekly health summary (runs once/week per user)
-// gemini-3-flash         20  Prescription/document scan (rare action)
-// gemini-2.5-flash       20  Medication interaction check (only on add)
-// gemini-3.5-flash-lite 500  NLP log parsing + anomaly detection (fires constantly)
-// gemma-4-26b         14400  Future bulk/background tasks
+// Model                RPD    Used for
+// gemini-3.5-flash-lite 500   Primary for everything (high volume, reliable)
+// gemini-2.5-flash-lite  20   Fallback 1 (better reasoning)
+// gemma-4-26b         14400   Fallback 2 (bulk, always available)
 
 const mk = (model: string, json = false) =>
   genAI.getGenerativeModel({
@@ -18,21 +15,99 @@ const mk = (model: string, json = false) =>
     ...(json ? { generationConfig: { responseMimeType: "application/json" } } : {}),
   });
 
-// User-facing high-quality chat
-export const chatModel        = mk("gemini-2.5-flash-lite");
+// ── Named model instances ─────────────────────────────────────────────────────
 
-// Weekly summary — quality matters, runs rarely
-export const summaryModel     = mk("gemini-3.7-flash", true);
+// Primary — 500 RPD, used for everything by default
+export const nlpModel      = mk("gemini-3.5-flash-lite", true);
+export const anomalyModel  = mk("gemini-3.5-flash-lite", true);
 
-// Document/prescription scan — vision + JSON
-export const visionModel      = mk("gemini-3-flash");
+// Vision — for prescription/document scan (no JSON mode, vision capable)
+export const visionModel   = mk("gemini-3.5-flash-lite");
 
-// Medication interactions — needs good pharmacology knowledge
-export const interactionModel = mk("gemini-2.5-flash", true);
+// Chat — text generation (no JSON mode)
+export const chatModel     = mk("gemini-3.5-flash-lite");
 
-// High-volume background tasks — 500 RPD
-export const nlpModel         = mk("gemini-3.5-flash-lite", true);
-export const anomalyModel     = mk("gemini-3.5-flash-lite", true);
+// Aliases kept for compatibility
+export const summaryModel     = nlpModel;
+export const interactionModel = nlpModel;
+
+// ── Fallback chain ────────────────────────────────────────────────────────────
+//
+// Usage: const result = await generateWithFallback(prompt, { json: true })
+//
+// Chain: gemini-3.5-flash-lite (500 RPD)
+//     → gemini-2.5-flash-lite  (20 RPD, better quality)
+//     → gemma-4-26b            (14400 RPD, always available)
+//
+// Triggers fallback on: 429 (rate limit), 503 (overloaded), quota errors
+
+type GenerateOptions = {
+  json?: boolean         // use JSON response mode
+  vision?: {             // for multimodal (image) requests
+    base64: string
+    mimeType: string
+  }
+}
+
+const FALLBACK_CHAIN = [
+  { model: "gemini-3.5-flash-lite", rpd: 500  },
+  { model: "gemini-2.5-flash-lite",  rpd: 20   },
+  { model: "gemma-4-26b",            rpd: 14400 },
+]
+
+function isRateLimitError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return (
+    msg.includes("429") ||
+    msg.includes("quota") ||
+    msg.includes("rate limit") ||
+    msg.includes("resource_exhausted") ||
+    msg.includes("503") ||
+    msg.includes("overloaded")
+  );
+}
+
+export async function generateWithFallback(
+  prompt: string,
+  opts: GenerateOptions = {}
+): Promise<GenerateContentResult> {
+  let lastError: unknown;
+
+  for (const { model, rpd } of FALLBACK_CHAIN) {
+    // gemma-4-26b doesn't support JSON response mode
+    const useJson = opts.json && model !== "gemma-4-26b";
+    const instance = genAI.getGenerativeModel({
+      model,
+      ...(useJson ? { generationConfig: { responseMimeType: "application/json" } } : {}),
+    });
+
+    try {
+      let result: GenerateContentResult;
+      if (opts.vision) {
+        result = await instance.generateContent([
+          prompt,
+          { inlineData: { data: opts.vision.base64, mimeType: opts.vision.mimeType } },
+        ]);
+      } else {
+        result = await instance.generateContent(prompt);
+      }
+      if (model !== "gemini-3.5-flash-lite") {
+        console.warn(`[gemini] Fell back to ${model} (RPD: ${rpd})`);
+      }
+      return result;
+    } catch (err) {
+      if (isRateLimitError(err)) {
+        console.warn(`[gemini] ${model} rate limited — trying next model`);
+        lastError = err;
+        continue;
+      }
+      throw err; // non-rate-limit error → don't retry
+    }
+  }
+
+  throw lastError ?? new Error("All Gemini models exhausted");
+}
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -73,10 +148,9 @@ Return a JSON object with these fields (use null if not found):
   "summary": "2-3 sentence plain English summary"
 }`;
 
-  const result = await visionModel.generateContent([
-    prompt,
-    { inlineData: { data: base64Data, mimeType } },
-  ]);
+  const result = await generateWithFallback(prompt, {
+    vision: { base64: base64Data, mimeType },
+  });
 
   const text = result.response.text().trim();
   try {
@@ -111,7 +185,7 @@ Provide a JSON response with:
 }
 Be encouraging, specific, and actionable. Tailor recommendations to Indian context where relevant.`;
 
-  const result = await summaryModel.generateContent(prompt);
+  const result = await generateWithFallback(prompt, { json: true });
   const text = result.response.text().trim();
   try {
     return parseJSON(text);

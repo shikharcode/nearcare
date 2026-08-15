@@ -1,4 +1,4 @@
-import { interactionModel } from "@/lib/gemini";
+import { generateWithFallback } from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export type InteractionResult = {
@@ -52,7 +52,7 @@ Return a JSON object with this exact shape:
   "generalAdvice": "brief overall advice string, always recommend consulting a doctor"
 }`;
 
-  const result = await interactionModel.generateContent(prompt);
+  const result = await generateWithFallback(prompt, { json: true });
   const text = result.response.text().trim();
 
   try {

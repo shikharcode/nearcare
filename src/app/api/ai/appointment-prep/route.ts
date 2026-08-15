@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { healthLogs, medications, healthAlerts, documents, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { nlpModel, parseJSON } from "@/lib/gemini";
+import { generateWithFallback, parseJSON } from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { format, subDays } from "date-fns";
 
@@ -138,7 +138,7 @@ Rules:
 
   let result;
   try {
-    result = await nlpModel.generateContent(prompt);
+    result = await generateWithFallback(prompt, { json: true });
   } catch (err: unknown) {
     console.error("[appointment-prep] Gemini error:", err);
     const msg = err instanceof Error ? err.message : "Gemini call failed";

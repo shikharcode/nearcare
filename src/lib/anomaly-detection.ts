@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { healthLogs, healthAlerts } from "@/db/schema";
 import { eq, desc, and, gte } from "drizzle-orm";
-import { anomalyModel } from "@/lib/gemini";
+import { generateWithFallback } from "@/lib/gemini";
 import { subDays } from "date-fns";
 
 interface AnomalyResult {
@@ -61,7 +61,7 @@ Do not invent anomalies — only report what the data clearly shows.`;
 
   let parsed: GeminiAnomalyResponse;
   try {
-    const result = await anomalyModel.generateContent(prompt);
+    const result = await generateWithFallback(prompt, { json: true });
     const text = result.response.text().trim();
     const cleaned = text
       .replace(/^```json\s*/i, "")
