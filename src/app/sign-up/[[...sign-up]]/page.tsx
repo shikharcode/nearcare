@@ -42,7 +42,7 @@ export default function SignUpPage() {
             <Heart className="h-6 w-6 text-blue-600 fill-blue-600" />
             <span className="text-xl font-bold text-gray-900">NearCare</span>
           </div>
-          <SignUp forceRedirectUrl="/onboarding" />
+          <SignUp fallbackRedirectUrl="/onboarding" />
           <p className="text-center text-sm text-gray-500 mt-6">
             Already have an account?{" "}
             <Link href="/sign-in" className="text-blue-600 font-medium hover:underline">Sign in</Link>

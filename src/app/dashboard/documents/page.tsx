@@ -412,10 +412,10 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {/* Upload Drop Zone — always visible */}
+      {/* Upload Drop Zone */}
       <div
         className={cn(
-          "border-2 border-dashed rounded-2xl p-8 text-center mb-6 cursor-pointer transition-all duration-200",
+          "border-2 border-dashed rounded-2xl p-5 sm:p-8 text-center mb-6 cursor-pointer transition-all duration-200",
           isDragOver
             ? "border-blue-400 bg-blue-50 dark:bg-blue-950/40 scale-[1.01]"
             : "border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
@@ -426,16 +426,16 @@ export default function DocumentsPage() {
         onDrop={handleDrop}
       >
         <div className={cn(
-          "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-colors",
+          "w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-colors",
           isDragOver ? "bg-blue-100 dark:bg-blue-900/40" : "bg-gray-100 dark:bg-gray-800"
         )}>
-          <CloudUpload className={cn("h-8 w-8 transition-colors", isDragOver ? "text-blue-500" : "text-gray-400 dark:text-gray-500")} />
+          <CloudUpload className={cn("h-6 w-6 sm:h-8 sm:w-8 transition-colors", isDragOver ? "text-blue-500" : "text-gray-400 dark:text-gray-500")} />
         </div>
         <p className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-1">
-          Drop files here or click to upload
+          Drop files here or tap to upload
         </p>
         <p className="text-sm text-gray-400 dark:text-gray-500">
-          PDF, JPG, PNG · AI extracts key info automatically
+          PDF, JPG, PNG · AI extracts key info
         </p>
       </div>
 
@@ -447,16 +447,17 @@ export default function DocumentsPage() {
               key={tab.value}
               onClick={() => setActiveTab(tab.value)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
+                "flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 min-h-[44px]",
                 activeTab === tab.value
                   ? TAB_ACTIVE_CLASSES[tab.value]
                   : TAB_INACTIVE_CLASSES
               )}
             >
               {TAB_ICONS[tab.value]}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.value === "all" ? "All" : tab.label.split(" ")[0]}</span>
               <span className={cn(
-                "ml-0.5 text-xs px-1.5 py-0.5 rounded-full font-semibold",
+                "text-xs px-1.5 py-0.5 rounded-full font-semibold",
                 activeTab === tab.value
                   ? "bg-white/20 text-white"
                   : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
@@ -516,7 +517,7 @@ export default function DocumentsPage() {
 
       {/* Document grid */}
       {filtered.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(doc => {
             const extracted = parseExtracted(doc.extractedData);
             const isDeleting = deletingId === doc.id;
@@ -527,49 +528,49 @@ export default function DocumentsPage() {
                 key={doc.id}
                 className="group relative border-gray-100 dark:border-gray-800 shadow-md hover:shadow-xl rounded-2xl transition-all duration-200 hover:scale-[1.02] cursor-pointer overflow-hidden bg-white dark:bg-gray-900"
               >
-                {/* Delete button — appears on hover */}
+                {/* Delete button — always visible on mobile, hover on desktop */}
                 <button
-                  className="absolute top-3 right-3 z-10 w-7 h-7 rounded-lg bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 dark:hover:border-red-800 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                  className="absolute top-3 right-3 z-10 w-8 h-8 rounded-lg bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 dark:hover:border-red-800 transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100 opacity-100"
                   onClick={e => { e.stopPropagation(); handleDelete(doc.id); }}
                   disabled={isDeleting}
                   aria-label="Delete document"
                 >
                   {isDeleting
-                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    : <X className="h-3.5 w-3.5" />
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <Trash2 className="h-4 w-4" />
                   }
                 </button>
 
-                <CardContent className="p-5 flex flex-col gap-3 h-full">
-                  {/* Icon */}
-                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0", TYPE_ICON_BG[typeKey])}>
-                    {TYPE_ICONS[typeKey]}
-                  </div>
-
-                  {/* Name */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2">
-                      {doc.name}
-                    </p>
-                    {extracted?.summary && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-snug">
-                        {extracted.summary}
+                <CardContent className="p-4 flex flex-col gap-3 h-full">
+                  {/* Icon + name row */}
+                  <div className="flex items-start gap-3 pr-8">
+                    <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0", TYPE_ICON_BG[typeKey])}>
+                      {TYPE_ICONS[typeKey]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2">
+                        {doc.name}
                       </p>
-                    )}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-gray-800">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                      <Badge className={cn("text-xs font-medium px-2 py-0.5", TYPE_BADGE_CLASSES[typeKey])}>
-                        {TYPE_LABELS[doc.type] ?? doc.type}
-                      </Badge>
                       {doc.date && (
-                        <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 block">
                           {formatDate(doc.date)}
                         </span>
                       )}
                     </div>
+                  </div>
+
+                  {/* Summary */}
+                  {extracted?.summary && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-snug">
+                      {extracted.summary}
+                    </p>
+                  )}
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between gap-2 mt-auto pt-3 border-t border-gray-50 dark:border-gray-800">
+                    <Badge className={cn("text-xs font-medium px-2 py-0.5", TYPE_BADGE_CLASSES[typeKey])}>
+                      {TYPE_LABELS[doc.type] ?? doc.type}
+                    </Badge>
                     <ViewDetailsDialog doc={doc} extracted={extracted} />
                   </div>
                 </CardContent>
