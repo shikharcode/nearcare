@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Stethoscope, Save, ExternalLink, UserCircle2 } from "lucide-react";
+import { useEffect, useState, useRef, KeyboardEvent } from "react";
+import { Stethoscope, Save, ExternalLink, UserCircle2, X, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
+import { cn } from "@/lib/utils";
 
 const SPECIALTIES = [
   "Cardiologist",
@@ -22,6 +23,12 @@ const SPECIALTIES = [
   "Psychiatrist",
   "Pediatrician",
   "Other",
+];
+
+const INDIAN_LANGUAGES = [
+  "English", "Hindi", "Bengali", "Telugu", "Marathi", "Tamil",
+  "Urdu", "Gujarati", "Kannada", "Malayalam", "Odia", "Punjabi",
+  "Assamese", "Maithili", "Sanskrit", "Other",
 ];
 
 interface DoctorProfile {
@@ -43,6 +50,145 @@ const emptyProfile: DoctorProfile = {
   yearsOfExperience: "",
   languages: "",
 };
+
+// ── Language tag multi-select ─────────────────────────────────────────────────
+
+function LanguageSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const selected = value ? value.split(",").map(l => l.trim()).filter(Boolean) : [];
+  const [custom, setCustom] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const toggle = (lang: string) => {
+    const next = selected.includes(lang)
+      ? selected.filter(l => l !== lang)
+      : [...selected, lang];
+    onChange(next.join(", "));
+  };
+
+  const addCustom = () => {
+    const trimmed = custom.trim();
+    if (trimmed && !selected.includes(trimmed)) {
+      onChange([...selected, trimmed].join(", "));
+    }
+    setCustom("");
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addCustom();
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* Selected tags */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map(lang => (
+            <span
+              key={lang}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+            >
+              {lang}
+              <button
+                type="button"
+                onClick={() => toggle(lang)}
+                className="hover:text-red-500 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Language grid */}
+      <div className="flex flex-wrap gap-1.5">
+        {INDIAN_LANGUAGES.map(lang => (
+          <button
+            key={lang}
+            type="button"
+            onClick={() => toggle(lang)}
+            className={cn(
+              "px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-150 active:scale-95",
+              selected.includes(lang)
+                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+            )}
+          >
+            {lang}
+          </button>
+        ))}
+      </div>
+
+      {/* Custom language input */}
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          type="text"
+          value={custom}
+          onChange={e => setCustom(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Add other language..."
+          className="flex-1 h-9 px-3 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          disabled={!custom.trim()}
+          className="h-9 px-3 text-sm rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-40 transition-colors"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Phone input with country code ─────────────────────────────────────────────
+
+function PhoneInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const CODES = ["+91", "+1", "+44", "+61", "+971", "+65"];
+  const [code, setCode] = useState("+91");
+  const [num, setNum] = useState("");
+
+  // Init from stored value
+  useEffect(() => {
+    if (!value) return;
+    const matched = CODES.find(c => value.startsWith(c));
+    if (matched) {
+      setCode(matched);
+      setNum(value.slice(matched.length).trim());
+    } else {
+      setNum(value);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const update = (newCode: string, newNum: string) => {
+    onChange(newNum ? `${newCode} ${newNum}` : "");
+  };
+
+  return (
+    <div className="flex gap-2">
+      <select
+        value={code}
+        onChange={e => { setCode(e.target.value); update(e.target.value, num); }}
+        className="h-12 rounded-xl border border-input bg-background px-3 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring w-24 flex-shrink-0"
+      >
+        {CODES.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+      <Input
+        type="tel"
+        placeholder="98765 43210"
+        value={num}
+        onChange={e => { setNum(e.target.value); update(code, e.target.value); }}
+        className="h-12 rounded-xl flex-1 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+      />
+    </div>
+  );
+}
 
 export default function DoctorProfilePage() {
   const { user } = useUser();
@@ -220,14 +366,12 @@ export default function DoctorProfilePage() {
 
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="dark:text-gray-300">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="e.g. +1 555 000 0000"
+                  <Label className="dark:text-gray-300 flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />Phone
+                  </Label>
+                  <PhoneInput
                     value={profile.phone}
-                    onChange={(e) => handleChange("phone", e.target.value)}
-                    className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                    onChange={(v) => handleChange("phone", v)}
                   />
                 </div>
 
@@ -246,18 +390,14 @@ export default function DoctorProfilePage() {
                   />
                 </div>
 
-                {/* Languages */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="languages" className="dark:text-gray-300">Languages Spoken</Label>
-                  <Input
-                    id="languages"
-                    placeholder="e.g. English, Hindi, Spanish"
-                    value={profile.languages}
-                    onChange={(e) => handleChange("languages", e.target.value)}
-                    className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
-                  />
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Comma separated</p>
-                </div>
+                {/* Languages — full width */}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="dark:text-gray-300">Languages Spoken</Label>
+                <LanguageSelector
+                  value={profile.languages}
+                  onChange={(v) => handleChange("languages", v)}
+                />
               </div>
 
               {/* Bio */}
