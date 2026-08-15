@@ -95,6 +95,7 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
 
     recognition.onstart = () => {
       setState("recording")
+      setInterim("Listening... speak now")
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -113,12 +114,17 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error("[VoiceInput] error:", event.error, event.message)
       if (event.error === "not-allowed" || event.error === "permission-denied") {
-        toast.error("Microphone permission denied — please allow mic access in your browser")
+        toast.error("Microphone blocked — click the 🔒 icon in your browser address bar and allow microphone")
       } else if (event.error === "no-speech") {
-        toast.error("No speech detected — please speak clearly and try again")
+        toast.error("No speech detected — speak louder or check your mic")
       } else if (event.error === "network") {
-        toast.error("Network error — voice input requires internet connection")
+        toast.error("Voice needs internet — check your connection")
+      } else if (event.error === "service-not-allowed") {
+        toast.error("Voice input blocked — use Chrome or Edge browser (not Safari/Firefox)")
+      } else {
+        toast.error("Voice error: " + event.error + " — try Chrome browser")
       }
       stopRecognition()
     }
@@ -162,8 +168,8 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
           <MicOff className="h-5 w-5 text-gray-400" />
         </button>
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-20 pointer-events-none">
-          <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
-            Voice input not supported in this browser
+          <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg text-center">
+            Voice not supported<br/>Use Chrome or Edge
           </div>
           <div className="w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45 mx-auto -mt-1" />
         </div>
