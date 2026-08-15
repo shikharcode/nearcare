@@ -53,10 +53,12 @@ export default function DoctorProfilePage() {
 
   useEffect(() => {
     fetch("/api/doctor/profile")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
       .then((data) => {
         if (data && typeof data === "object" && !data.error) {
-          // {} means no profile yet (new doctor)
           const hasProfile = Object.keys(data).length > 0;
           if (hasProfile) {
             setProfile({
@@ -72,9 +74,18 @@ export default function DoctorProfilePage() {
           } else {
             setIsNew(true);
           }
+        } else if (data?.error) {
+          throw new Error(data.error);
         }
       })
-      .catch(() => toast.error("Failed to load profile"))
+      .catch((err) => {
+        console.error("[doctor/profile]", err);
+        // Only show toast for real errors, not "no profile yet"
+        if (err.message !== "HTTP 404") {
+          toast.error("Failed to load profile — " + (err.message || "please refresh"));
+        }
+        setIsNew(true);
+      })
       .finally(() => setLoading(false));
   }, []);
 
