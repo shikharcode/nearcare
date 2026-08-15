@@ -1,415 +1,272 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { Stethoscope, Phone, BadgeCheck, AlertTriangle, ExternalLink } from "lucide-react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  Stethoscope,
+  Heart,
+  Droplets,
+  Brain,
+  Bone,
+  Star,
+  Sun,
+  Wind,
+  Activity,
+  Eye,
+  Ear,
+  Check,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const SPECIALITIES = [
-  "Cardiologist",
-  "Endocrinologist",
-  "General Physician",
-  "Orthopedic",
-  "Neurologist",
-  "Gynecologist",
-  "Ophthalmologist",
-  "Dermatologist",
-  "Psychiatrist",
-  "Pediatrician",
-];
-
-const INDIAN_STATES = [
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-  "Andaman and Nicobar Islands",
-  "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Jammu and Kashmir",
-  "Ladakh",
-  "Lakshadweep",
-  "Puducherry",
-];
-
-interface HealthAlert {
-  id: string;
-  type: string;
-  message: string;
-  severity: string;
-}
-
-interface Facility {
+interface Specialist {
   name: string;
-  address: string;
-  state: string;
-  district: string;
-  specialities: string[];
-  phone: string;
-  registrationNumber: string;
+  icon: React.ReactNode;
+  color: string;
+  bgColor: string;
 }
 
-function getSmartSuggestions(alerts: HealthAlert[]): string[] {
-  const suggestions: string[] = [];
-  const combined = alerts.map((a) => a.message.toLowerCase()).join(" ");
+const specialists: Specialist[] = [
+  {
+    name: "Cardiologist",
+    icon: <Heart className="w-6 h-6" />,
+    color: "text-red-500",
+    bgColor: "bg-red-50",
+  },
+  {
+    name: "Endocrinologist",
+    icon: <Droplets className="w-6 h-6" />,
+    color: "text-amber-500",
+    bgColor: "bg-amber-50",
+  },
+  {
+    name: "Neurologist",
+    icon: <Brain className="w-6 h-6" />,
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
+  },
+  {
+    name: "Orthopedic",
+    icon: <Bone className="w-6 h-6" />,
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+  },
+  {
+    name: "Gynecologist",
+    icon: <Star className="w-6 h-6" />,
+    color: "text-pink-500",
+    bgColor: "bg-pink-50",
+  },
+  {
+    name: "Dermatologist",
+    icon: <Sun className="w-6 h-6" />,
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-50",
+  },
+  {
+    name: "Psychiatrist",
+    icon: <Brain className="w-6 h-6" />,
+    color: "text-blue-500",
+    bgColor: "bg-blue-50",
+  },
+  {
+    name: "Diabetologist",
+    icon: <Droplets className="w-6 h-6" />,
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+  },
+  {
+    name: "Pulmonologist",
+    icon: <Wind className="w-6 h-6" />,
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-50",
+  },
+  {
+    name: "Gastroenterologist",
+    icon: <Activity className="w-6 h-6" />,
+    color: "text-green-500",
+    bgColor: "bg-green-50",
+  },
+  {
+    name: "Ophthalmologist",
+    icon: <Eye className="w-6 h-6" />,
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-50",
+  },
+  {
+    name: "ENT Specialist",
+    icon: <Ear className="w-6 h-6" />,
+    color: "text-teal-500",
+    bgColor: "bg-teal-50",
+  },
+  {
+    name: "General Physician",
+    icon: <Stethoscope className="w-6 h-6" />,
+    color: "text-gray-500",
+    bgColor: "bg-gray-100",
+  },
+];
 
-  if (/bp|blood pressure|hypertension|heart|cardiac/.test(combined)) {
-    suggestions.push("Consider seeing a Cardiologist");
-  }
-  if (/blood sugar|glucose|diabetes|hba1c/.test(combined)) {
-    suggestions.push("Consider seeing an Endocrinologist");
-  }
-  if (/pain|joint|bone|ortho/.test(combined)) {
-    suggestions.push("Consider seeing an Orthopedic specialist");
-  }
-  return suggestions;
-}
-
-const suggestionColors = [
-  "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800",
-  "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
-  "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800",
+const steps = [
+  {
+    step: 1,
+    title: "Select a Specialization",
+    description: "Tap the specialty that matches your health concern.",
+  },
+  {
+    step: 2,
+    title: "Generate Your Brief",
+    description:
+      "We compile your relevant health data into a concise 1-page summary tailored for that specialist.",
+  },
+  {
+    step: 3,
+    title: "Walk in Prepared",
+    description:
+      "Share the brief with your doctor so they have full context from the first minute.",
+  },
 ];
 
 export default function SpecialistsPage() {
-  const [alerts, setAlerts] = useState<HealthAlert[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const router = useRouter();
+  const [selectedSpec, setSelectedSpec] = useState<string | null>(null);
 
-  const [speciality, setSpeciality] = useState("");
-  const [state, setState] = useState("");
-  const [district, setDistrict] = useState("");
+  const handleSpecSelect = (name: string) => {
+    setSelectedSpec((prev) => (prev === name ? null : name));
+  };
 
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [fallback, setFallback] = useState(false);
-  const [fallbackMessage, setFallbackMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-
-  useEffect(() => {
-    async function fetchAlerts() {
-      try {
-        const res = await fetch("/api/alerts?type=anomaly_detected");
-        if (!res.ok) return;
-        const data = await res.json();
-        const list: HealthAlert[] = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.alerts)
-          ? data.alerts
-          : [];
-        setAlerts(list);
-        setSuggestions(getSmartSuggestions(list));
-      } catch {
-        // silently ignore — suggestions are best-effort
-      }
-    }
-    fetchAlerts();
-  }, []);
-
-  async function handleSearch() {
-    setLoading(true);
-    setSearched(true);
-    setFacilities([]);
-    setFallback(false);
-    setFallbackMessage("");
-
-    try {
-      const params = new URLSearchParams();
-      if (speciality) params.set("speciality", speciality);
-      if (state) params.set("state", state);
-      if (district) params.set("district", district);
-
-      const res = await fetch(`/api/specialists/search?${params.toString()}`);
-      const data = await res.json();
-
-      setFacilities(data.facilities ?? []);
-      setFallback(!!data.fallback);
-      if (data.message) setFallbackMessage(data.message);
-    } catch {
-      setFallback(true);
-      setFallbackMessage(
-        "HFR API temporarily unavailable. Visit hfr.abdm.gov.in to search manually."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleNotifyMe = () => {
+    toast.success("You will be notified when doctor search launches!");
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 pb-28 md:pb-10 space-y-8">
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center flex-shrink-0">
-          <Stethoscope className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-10">
+      <div className="max-w-2xl mx-auto px-4 pt-8 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="w-16 h-16 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+            <Stethoscope className="w-8 h-8 text-violet-600 dark:text-violet-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Find a Specialist
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Powered by India&apos;s Health Facility Registry (ABDM)
+          <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs">
+            Select your required specialization and get a personalized health
+            brief ready for your appointment.
           </p>
         </div>
-      </div>
 
-      {/* Smart Suggestions */}
-      {suggestions.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500">
-            Based on your health data
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map((s, i) => (
-              <button
-                key={s}
-                onClick={() => {
-                  const match = SPECIALITIES.find((sp) =>
-                    s.toLowerCase().includes(sp.toLowerCase())
-                  );
-                  if (match) setSpeciality(match);
-                }}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-semibold transition-all active:scale-95 min-h-[44px]",
-                  suggestionColors[i % suggestionColors.length]
-                )}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Search Section */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4 shadow-sm">
-        <p className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-          Search Facilities
-        </p>
-
-        {/* Speciality */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="speciality-select">
-            Speciality
-          </label>
-          <select
-            id="speciality-select"
-            value={speciality}
-            onChange={(e) => setSpeciality(e.target.value)}
-            className="w-full min-h-[44px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All specialities</option>
-            {SPECIALITIES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* State */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="state-select">
-            State
-          </label>
-          <select
-            id="state-select"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            className="w-full min-h-[44px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All states</option>
-            {INDIAN_STATES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* District */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="district-input">
-            District{" "}
-            <span className="font-normal text-gray-400 dark:text-gray-500">(optional)</span>
-          </label>
-          <input
-            id="district-input"
-            type="text"
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            placeholder="e.g. South Delhi"
-            className="w-full min-h-[44px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <button
-          onClick={handleSearch}
-          disabled={loading}
-          className={cn(
-            "w-full min-h-[44px] rounded-xl font-semibold text-sm transition-all",
-            loading
-              ? "bg-blue-400 dark:bg-blue-700 text-white cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white shadow-sm hover:shadow-md"
-          )}
-        >
-          {loading ? "Searching..." : "Search Facilities"}
-        </button>
-      </div>
-
-      {/* Fallback Banner */}
-      {fallback && (
-        <div className="flex items-start gap-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              Live HFR data temporarily unavailable
-            </p>
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-              {fallbackMessage ||
-                "Please try again shortly or search manually on the HFR portal."}
-            </p>
-            <a
-              href="https://hfr.abdm.gov.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 mt-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 underline underline-offset-2"
-            >
-              Visit hfr.abdm.gov.in
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* Results */}
-      {searched && !loading && (
-        <div className="space-y-3">
-          {facilities.length > 0 ? (
-            <>
-              <p className="text-xs font-bold tracking-widest uppercase text-gray-400 dark:text-gray-500">
-                {facilities.length} {facilities.length === 1 ? "facility" : "facilities"} found
-              </p>
-              {facilities.map((f, idx) => (
-                <div
-                  key={`${f.registrationNumber}-${idx}`}
-                  className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-bold text-gray-900 dark:text-white text-base leading-snug">
-                      {f.name}
-                    </h3>
-                    {f.registrationNumber && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 text-[11px] font-semibold border border-green-200 dark:border-green-800 flex-shrink-0">
-                        <BadgeCheck className="h-3 w-3" />
-                        {f.registrationNumber}
-                      </span>
-                    )}
-                  </div>
-
-                  {f.address && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                      {f.address}
-                      {f.district ? `, ${f.district}` : ""}
-                      {f.state ? `, ${f.state}` : ""}
-                    </p>
-                  )}
-
-                  {f.specialities.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {f.specialities.map((sp) => (
-                        <span
-                          key={sp}
-                          className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                        >
-                          {sp}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {f.phone && (
-                    <a
-                      href={`tel:${f.phone}`}
-                      className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors min-h-[44px]"
-                    >
-                      <Phone className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                      {f.phone}
-                    </a>
-                  )}
-                </div>
-              ))}
-            </>
-          ) : (
-            <div className="text-center py-12 space-y-2">
-              <p className="text-gray-500 dark:text-gray-400 font-medium">
-                No facilities found
-              </p>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                Try a different district, or{" "}
-                <a
-                  href="https://hfr.abdm.gov.in"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-                >
-                  visit hfr.abdm.gov.in
-                </a>
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Info Section */}
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60 p-5 space-y-4">
-        <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-white mb-1.5">
-            What is HFR?
+        {/* Specialization Grid */}
+        <section>
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            Select Specialization
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            The Health Facility Registry (HFR) is India&apos;s official national database of healthcare
-            facilities, maintained by the Ayushman Bharat Digital Mission (ABDM). It lists hospitals,
-            clinics, diagnostic centres, and specialists across all states — verified and publicly
-            accessible to help you find the right care near you.
-          </p>
-        </div>
+          <div className="grid grid-cols-3 gap-3">
+            {specialists.map((spec) => {
+              const isSelected = selectedSpec === spec.name;
+              return (
+                <button
+                  key={spec.name}
+                  onClick={() => handleSpecSelect(spec.name)}
+                  className={cn(
+                    "relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 min-h-[80px] p-3 text-center transition-all duration-150 active:scale-95",
+                    isSelected
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/40 shadow-md"
+                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600"
+                  )}
+                >
+                  {isSelected && (
+                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center",
+                      spec.bgColor,
+                      spec.color
+                    )}
+                  >
+                    {spec.icon}
+                  </span>
+                  <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 leading-tight">
+                    {spec.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            Link your ABHA (Ayushman Bharat Health Account) ID to enable seamless health data
-            sharing with registered facilities.
-          </p>
-          <Link
-            href="/dashboard/profile/abha"
-            className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
-          >
-            Link your ABHA ID
-          </Link>
-        </div>
+        {/* CTA Card — shown when a specialist is selected */}
+        {selectedSpec && (
+          <section>
+            <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 p-5 text-white shadow-lg">
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-200 mb-1">
+                Appointment Prep
+              </p>
+              <h3 className="text-lg font-bold mb-1">
+                Preparing for your {selectedSpec} visit?
+              </h3>
+              <p className="text-sm text-blue-100 mb-4">
+                Get a tailored 1-page summary of your health data for this
+                appointment.
+              </p>
+              <button
+                onClick={() => router.push("/dashboard/appointment")}
+                className="w-full min-h-[44px] rounded-xl bg-white text-blue-600 font-semibold text-sm py-3 active:scale-95 transition-transform"
+              >
+                Generate Appointment Brief
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Coming Soon Card */}
+        <section>
+          <div className="rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900/60 p-5 text-center space-y-2">
+            <span className="inline-block text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-200 dark:bg-gray-800 dark:text-gray-500 px-2 py-0.5 rounded-full">
+              Coming Soon
+            </span>
+            <h3 className="text-base font-semibold text-gray-500 dark:text-gray-400">
+              Live Doctor &amp; Hospital Search
+            </h3>
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              Integrating with Indian healthcare directories — Practo, NHA
+              health facility registry.
+            </p>
+            <button
+              onClick={handleNotifyMe}
+              className="mt-2 min-h-[44px] w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium text-sm py-2 active:scale-95 transition-transform hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Notify me
+            </button>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section>
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+            How It Works
+          </h2>
+          <ol className="space-y-4">
+            {steps.map(({ step, title, description }) => (
+              <li key={step} className="flex gap-4 items-start">
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 font-bold text-sm flex items-center justify-center">
+                  {step}
+                </span>
+                <div>
+                  <p className="font-semibold text-gray-800 dark:text-white text-sm">
+                    {title}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+                    {description}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
     </div>
   );
