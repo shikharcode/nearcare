@@ -86,10 +86,12 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
     if (!SpeechRecognitionAPI) return
 
     const recognition: ISpeechRecognition = new SpeechRecognitionAPI()
-    recognition.lang = "en-US"
-    recognition.continuous = false
+    recognition.lang = "en-IN" // Indian English — better for Indian accents
+    recognition.continuous = true  // keep listening until user clicks stop
     recognition.interimResults = true
     recognitionRef.current = recognition
+
+    let accumulatedFinal = "" // accumulate across multiple result events
 
     recognition.onstart = () => {
       setState("recording")
@@ -97,39 +99,39 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interimText = ""
-      let finalText = ""
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript
         if (event.results[i].isFinal) {
-          finalText += transcript
+          accumulatedFinal += transcript + " "
         } else {
           interimText += transcript
         }
       }
 
-      setInterim(interimText)
-
-      if (finalText) {
-        setInterim("")
-        setState("done")
-        onTranscript(finalText.trim())
-        recognitionRef.current = null
-        // Reset to idle after brief visual feedback
-        setTimeout(() => setState("idle"), 1500)
-      }
+      setInterim(interimText || accumulatedFinal.trim())
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === "not-allowed" || event.error === "permission-denied") {
-        toast.error("Microphone permission denied")
+        toast.error("Microphone permission denied — please allow mic access in your browser")
+      } else if (event.error === "no-speech") {
+        toast.error("No speech detected — please speak clearly and try again")
+      } else if (event.error === "network") {
+        toast.error("Network error — voice input requires internet connection")
       }
       stopRecognition()
     }
 
     recognition.onend = () => {
-      if (recognitionRef.current) {
-        // ended without a final result (e.g. user clicked stop)
+      // Fire callback with whatever was accumulated
+      if (accumulatedFinal.trim()) {
+        setInterim("")
+        setState("done")
+        onTranscript(accumulatedFinal.trim())
+        recognitionRef.current = null
+        setTimeout(() => setState("idle"), 1500)
+      } else {
         recognitionRef.current = null
         setInterim("")
         setState("idle")
@@ -195,8 +197,8 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
       </button>
 
       {state === "recording" && (
-        <span className="text-xs font-medium text-red-500 dark:text-red-400 animate-pulse">
-          Listening...
+        <span className="text-xs font-medium text-red-500 dark:text-red-400 animate-pulse whitespace-nowrap">
+          Tap to stop
         </span>
       )}
 
