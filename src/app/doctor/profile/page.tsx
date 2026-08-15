@@ -124,10 +124,10 @@ export default function DoctorProfilePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-xl">
-          <Stethoscope className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+      {/* Header with avatar */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xl font-bold shadow-lg select-none flex-shrink-0">
+          {initials}
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Profile</h1>
@@ -177,13 +177,6 @@ export default function DoctorProfilePage() {
             </div>
           ) : (
             <div className="space-y-5">
-              {/* Doctor avatar */}
-              <div className="flex justify-center mb-2">
-                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-2xl font-bold shadow-lg select-none">
-                  {initials}
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Specialty */}
                 <div className="space-y-1.5">
