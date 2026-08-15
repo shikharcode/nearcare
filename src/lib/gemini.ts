@@ -2,17 +2,50 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-const jsonModel = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash-lite",
-  generationConfig: { responseMimeType: "application/json" },
-});
+// ── Model registry — one instance per task, spread across free tiers ─────────
+//
+// Model               RPD    Used for
+// gemini-2.5-flash-lite  20  AI Chat (quality matters most)
+// gemini-3.7-flash       20  Weekly health summary (runs once/week per user)
+// gemini-3-flash         20  Prescription/document scan (rare action)
+// gemini-2.5-flash       20  Medication interaction check (only on add)
+// gemini-3.5-flash-lite 500  NLP log parsing + anomaly detection (fires constantly)
+// gemma-4-26b         14400  Future bulk/background tasks
 
-const visionModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+const mk = (model: string, json = false) =>
+  genAI.getGenerativeModel({
+    model,
+    ...(json ? { generationConfig: { responseMimeType: "application/json" } } : {}),
+  });
 
-function parseJSON(text: string) {
-  const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+// User-facing high-quality chat
+export const chatModel        = mk("gemini-2.5-flash-lite");
+
+// Weekly summary — quality matters, runs rarely
+export const summaryModel     = mk("gemini-3.7-flash", true);
+
+// Document/prescription scan — vision + JSON
+export const visionModel      = mk("gemini-3-flash");
+
+// Medication interactions — needs good pharmacology knowledge
+export const interactionModel = mk("gemini-2.5-flash", true);
+
+// High-volume background tasks — 500 RPD
+export const nlpModel         = mk("gemini-3.5-flash-lite", true);
+export const anomalyModel     = mk("gemini-3.5-flash-lite", true);
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+export function parseJSON(text: string) {
+  const cleaned = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
   return JSON.parse(cleaned);
 }
+
+// ── extractDocumentInfo — uses visionModel (gemini-3-flash, 20 RPD) ──────────
 
 export async function extractDocumentInfo(base64Data: string, mimeType: string) {
   const prompt = `You are a medical document analyzer specializing in Indian medical documents. Extract key information from this medical document.
@@ -53,6 +86,8 @@ Return a JSON object with these fields (use null if not found):
   }
 }
 
+// ── generateHealthSummary — uses summaryModel (gemini-3.7-flash, 20 RPD) ─────
+
 export async function generateHealthSummary(logs: object[], medications: object[]) {
   const prompt = `You are a personal health assistant for an Indian health tracking app. Analyze this health data and provide insights tailored to Indian users.
 
@@ -76,7 +111,7 @@ Provide a JSON response with:
 }
 Be encouraging, specific, and actionable. Tailor recommendations to Indian context where relevant.`;
 
-  const result = await jsonModel.generateContent(prompt);
+  const result = await summaryModel.generateContent(prompt);
   const text = result.response.text().trim();
   try {
     return parseJSON(text);

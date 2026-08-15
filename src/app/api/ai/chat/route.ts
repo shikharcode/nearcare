@@ -2,11 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { healthLogs, medications, healthAlerts } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { chatModel } from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const chatModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 export async function POST(request: Request) {
   const { userId } = await auth();

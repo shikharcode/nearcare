@@ -1,15 +1,8 @@
 import { db } from "@/db";
 import { healthLogs, healthAlerts } from "@/db/schema";
 import { eq, desc, and, gte } from "drizzle-orm";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { anomalyModel } from "@/lib/gemini";
 import { subDays } from "date-fns";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-const jsonModel = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash-lite",
-  generationConfig: { responseMimeType: "application/json" },
-});
 
 interface AnomalyResult {
   type: string;
@@ -68,7 +61,7 @@ Do not invent anomalies — only report what the data clearly shows.`;
 
   let parsed: GeminiAnomalyResponse;
   try {
-    const result = await jsonModel.generateContent(prompt);
+    const result = await anomalyModel.generateContent(prompt);
     const text = result.response.text().trim();
     const cleaned = text
       .replace(/^```json\s*/i, "")

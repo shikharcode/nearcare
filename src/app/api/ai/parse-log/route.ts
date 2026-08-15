@@ -1,13 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { nlpModel } from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-const jsonModel = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash-lite",
-  generationConfig: { responseMimeType: "application/json" },
-});
 
 export async function POST(request: Request) {
   const { userId } = await auth();
@@ -105,7 +98,7 @@ Example output:
 }`;
 
   try {
-    const result = await jsonModel.generateContent(prompt);
+    const result = await nlpModel.generateContent(prompt);
     const raw = result.response.text().trim();
 
     let parsed: Record<string, unknown>;

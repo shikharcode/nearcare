@@ -1,12 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { interactionModel } from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-const jsonModel = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash-lite",
-  generationConfig: { responseMimeType: "application/json" },
-});
 
 export type InteractionResult = {
   hasInteractions: boolean;
@@ -59,7 +52,7 @@ Return a JSON object with this exact shape:
   "generalAdvice": "brief overall advice string, always recommend consulting a doctor"
 }`;
 
-  const result = await jsonModel.generateContent(prompt);
+  const result = await interactionModel.generateContent(prompt);
   const text = result.response.text().trim();
 
   try {
