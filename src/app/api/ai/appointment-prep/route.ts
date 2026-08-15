@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { healthLogs, medications, healthAlerts, documents, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { summaryModel, parseJSON } from "@/lib/gemini";
+import { nlpModel, parseJSON } from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { format, subDays } from "date-fns";
 
@@ -136,7 +136,14 @@ Rules:
 - specialistSuggestion: only suggest a referral if patterns clearly warrant it and the suggested specialist is DIFFERENT from who they are already visiting.
 - Keep all strings concise — this is a 1-page summary for a busy doctor.`;
 
-  const result = await summaryModel.generateContent(prompt);
+  let result;
+  try {
+    result = await nlpModel.generateContent(prompt);
+  } catch (err: unknown) {
+    console.error("[appointment-prep] Gemini error:", err);
+    const msg = err instanceof Error ? err.message : "Gemini call failed";
+    return Response.json({ error: msg }, { status: 500 });
+  }
   const text = result.response.text().trim();
 
   let parsed;
