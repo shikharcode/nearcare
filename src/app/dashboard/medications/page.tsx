@@ -16,7 +16,7 @@ import { MedicationAutocomplete } from "@/components/medications/medication-auto
 import { type InteractionResult } from "@/lib/medication-interactions";
 import { toast } from "sonner";
 import { today, cn } from "@/lib/utils";
-import { Plus, Check, X, Pill, Loader2, Scan, Pencil, Info, ClipboardList, QrCode, AlertTriangle } from "lucide-react";
+import { Plus, Check, X, Pill, Loader2, Scan, Pencil, Info, ClipboardList, QrCode, AlertTriangle, ExternalLink, TrendingDown } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(1, "Name required"),
@@ -61,6 +61,8 @@ type Medication = {
 type MedWithInteractions = Medication & { interactions?: InteractionResult | null };
 type MedLog = { id: string; medicationId: string; taken: boolean; date: string };
 type ScannedMed = { name: string; dosage?: string; frequency?: string; duration?: string };
+type PriceAlternative = { name: string; type: "generic" | "brand"; searchUrl1mg: string; searchUrlPharmEasy: string };
+type PriceData = { brandName: string; genericName: string | null; alternatives: PriceAlternative[]; savingsTip: string };
 
 const SEVERITY_STYLES: Record<"mild" | "moderate" | "severe", string> = {
   mild: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300",
@@ -287,6 +289,11 @@ export default function MedicationsPage() {
   const [interactionWarning, setInteractionWarning] = useState<InteractionResult | null>(null);
   const [interactionMedId, setInteractionMedId] = useState<string | null>(null);
 
+  const [priceDialogOpen, setPriceDialogOpen] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceData, setPriceData] = useState<PriceData | null>(null);
+  const [priceError, setPriceError] = useState<string | null>(null);
+
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) });
@@ -393,6 +400,23 @@ export default function MedicationsPage() {
     } catch { toast.error("Failed to remove."); }
   };
 
+  const checkPrice = async (medName: string) => {
+    setPriceData(null);
+    setPriceError(null);
+    setPriceLoading(true);
+    setPriceDialogOpen(true);
+    try {
+      const res = await fetch(`/api/medications/alternatives?name=${encodeURIComponent(medName)}`);
+      if (!res.ok) throw new Error();
+      const data: PriceData = await res.json();
+      setPriceData(data);
+    } catch {
+      setPriceError("Could not fetch alternatives. Please try again.");
+    } finally {
+      setPriceLoading(false);
+    }
+  };
+
   const handleScanPrescription = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -446,6 +470,11 @@ export default function MedicationsPage() {
     rangeLogs.filter(l => l.medicationId === medId && last7Dates.includes(l.date));
 
   const allMed7DayLogs = rangeLogs.filter(l => last7Dates.includes(l.date));
+
+  const buildPrimaryUrl = (store: "1mg" | "pharmeasy", name: string) =>
+    store === "1mg"
+      ? "https://www.1mg.com/search/all?name=" + encodeURIComponent(name)
+      : "https://pharmeasy.in/search/all?name=" + encodeURIComponent(name);
 
   return (
     <div className="space-y-8 pb-8">
@@ -843,6 +872,14 @@ export default function MedicationsPage() {
                         <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">7d</span>
                       </div>
                     )}
+                    <button
+                      onClick={() => checkPrice(med.name)}
+                      className="mt-2.5 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 text-gray-500 dark:text-gray-400 hover:text-green-700 dark:hover:text-green-400 text-xs font-medium transition-all duration-150"
+                      aria-label={`Check price and alternatives for ${med.name}`}
+                    >
+                      <TrendingDown className="h-3.5 w-3.5" />
+                      Check Price &amp; Alternatives
+                    </button>
                   </div>
 
                   <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200">
@@ -877,6 +914,119 @@ export default function MedicationsPage() {
           onRemove={async (id) => { await deleteMed(id); }}
         />
       )}
+
+      {/* Price check dialog */}
+      <Dialog open={priceDialogOpen} onOpenChange={(v) => { setPriceDialogOpen(v); if (!v) { setPriceData(null); setPriceError(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-green-500 flex-shrink-0" />
+              Price Check — {priceData?.brandName ?? "Loading..."}
+            </DialogTitle>
+          </DialogHeader>
+
+          {priceLoading && (
+            <div className="flex flex-col items-center py-10 gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Looking up alternatives...</p>
+            </div>
+          )}
+
+          {priceError && (
+            <div className="py-8 text-center">
+              <p className="text-red-500 text-sm">{priceError}</p>
+            </div>
+          )}
+
+          {priceData && !priceLoading && (
+            <div className="space-y-5 mt-2">
+              {/* Generic name badge */}
+              {priceData.genericName && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Generic equivalent:</span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-sm font-semibold">
+                    <Check className="h-3.5 w-3.5" />
+                    {priceData.genericName}
+                  </span>
+                </div>
+              )}
+
+              {/* Savings tip */}
+              <div className="flex items-start gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 px-4 py-3">
+                <TrendingDown className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">{priceData.savingsTip}</p>
+              </div>
+
+              {/* Primary search buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href={buildPrimaryUrl("1mg", priceData.genericName ?? priceData.brandName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 h-12 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white text-sm font-semibold transition-all duration-150"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Search on 1mg
+                </a>
+                <a
+                  href={buildPrimaryUrl("pharmeasy", priceData.genericName ?? priceData.brandName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 h-12 rounded-xl bg-green-600 hover:bg-green-700 active:scale-95 text-white text-sm font-semibold transition-all duration-150"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Search on PharmEasy
+                </a>
+              </div>
+
+              {/* Alternatives list */}
+              {priceData.alternatives.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">All Alternatives</p>
+                  <div className="space-y-2">
+                    {priceData.alternatives.map((alt, i) => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50">
+                        <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{alt.name}</span>
+                        <span className={cn(
+                          "text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0",
+                          alt.type === "generic"
+                            ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300"
+                            : "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                        )}>
+                          {alt.type}
+                        </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <a
+                            href={alt.searchUrl1mg}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-7 px-2 rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 text-xs font-medium flex items-center gap-1 transition-colors"
+                          >
+                            1mg
+                          </a>
+                          <a
+                            href={alt.searchUrlPharmEasy}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-7 px-2 rounded-lg bg-green-50 dark:bg-green-950/40 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 text-xs font-medium flex items-center gap-1 transition-colors"
+                          >
+                            PharmEasy
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Disclaimer */}
+              <p className="text-xs text-gray-400 dark:text-gray-500 text-center leading-relaxed border-t border-gray-100 dark:border-gray-800 pt-4">
+                Prices vary by pharmacy and region. Always consult your doctor before switching medications.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

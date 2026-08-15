@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/shared/providers";
+import { SwRegister } from "@/components/shared/sw-register";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Providers>
             {children}
             <Toaster richColors position="top-right" />
+            <SwRegister />
             <Analytics />
             <SpeedInsights />
           </Providers>

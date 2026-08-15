@@ -17,6 +17,7 @@ import {
   Stethoscope,
   ClipboardList,
   MessageCircle,
+  CalendarCheck,
   Search,
   Grid2X2,
   Heart,
@@ -49,6 +50,8 @@ const navSections = [
     items: [
       { href: "/dashboard/insights", label: "AI Insights", icon: TrendingUp },
       { href: "/dashboard/chat", label: "AI Chat", icon: MessageCircle },
+      { href: "/dashboard/appointment", label: "Appointment Prep", icon: CalendarCheck },
+      { href: "/dashboard/specialists", label: "Find Specialist", icon: Stethoscope },
       { href: "/dashboard/trends", label: "Trends", icon: TrendingUp },
       { href: "/dashboard/history", label: "History", icon: ClipboardList },
       { href: "/dashboard/import", label: "Import Data", icon: Download },
@@ -80,6 +83,7 @@ const allLinks = [
   { href: "/dashboard/documents", label: "Documents", icon: FileText },
   { href: "/dashboard/insights", label: "AI Insights", icon: TrendingUp },
   { href: "/dashboard/chat", label: "AI Chat", icon: MessageCircle },
+  { href: "/dashboard/appointment", label: "Appointment Prep", icon: CalendarCheck },
   { href: "/dashboard/trends", label: "Trends", icon: TrendingUp },
   { href: "/dashboard/history", label: "History", icon: ClipboardList },
   { href: "/dashboard/share", label: "Share", icon: Share2 },
@@ -100,6 +104,8 @@ const moreLinks = [
   { href: "/dashboard/share", label: "Share", icon: Share2 },
   { href: "/dashboard/search", label: "Search", icon: Search },
   { href: "/dashboard/insights", label: "Insights", icon: TrendingUp },
+  { href: "/dashboard/appointment", label: "Appointment Prep", icon: CalendarCheck },
+  { href: "/dashboard/specialists", label: "Find Specialist", icon: Stethoscope },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
   { href: "/dashboard/passport", label: "Health Passport", icon: FileHeart },
 ];
@@ -113,6 +119,8 @@ const moreIconColors: Record<string, string> = {
   "/dashboard/share": "bg-teal-100 dark:bg-teal-950 text-teal-600 dark:text-teal-400",
   "/dashboard/search": "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
   "/dashboard/insights": "bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400",
+  "/dashboard/appointment": "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
+  "/dashboard/specialists": "bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400",
   "/dashboard/profile": "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
   "/dashboard/passport": "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400",
 };

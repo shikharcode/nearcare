@@ -1,10 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
-import { Heart, WifiOff, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Heart, WifiOff, Loader2, Clock } from "lucide-react";
+
+const QUEUE_KEY = "nearcare_offline_queue";
+
+function getQueuedCount(): number {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export default function OfflinePage() {
   const [loading, setLoading] = useState(false);
+  const [queuedCount, setQueuedCount] = useState(0);
+
+  useEffect(() => {
+    setQueuedCount(getQueuedCount());
+  }, []);
 
   function handleRetry() {
     setLoading(true);
@@ -31,8 +49,22 @@ export default function OfflinePage() {
         </p>
       </div>
 
+      {queuedCount > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950 px-4 py-3 max-w-sm text-left">
+          <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            You have{" "}
+            <span className="font-semibold">
+              {queuedCount} check-in{queuedCount !== 1 ? "s" : ""}
+            </span>{" "}
+            queued — they will sync automatically when you reconnect.
+          </p>
+        </div>
+      )}
+
       <ul className="text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside text-left">
         <li>Your recent data is cached in your browser</li>
+        <li>Check-ins made offline are saved locally</li>
       </ul>
 
       <button
