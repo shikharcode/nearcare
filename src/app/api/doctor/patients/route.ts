@@ -21,12 +21,40 @@ export async function GET() {
     const recentLogs = await db.select().from(healthLogs).where(eq(healthLogs.userId, rel.patientUserId)).orderBy(desc(healthLogs.date)).limit(3);
     const activeMeds = await db.select().from(medications).where(and(eq(medications.userId, rel.patientUserId), eq(medications.isActive, true)));
     const recentAlerts = await db.select().from(healthAlerts).where(eq(healthAlerts.userId, rel.patientUserId)).orderBy(desc(healthAlerts.createdAt)).limit(3);
+    const lastLog = recentLogs[0] ?? null;
+    // Pick the most clinically significant vital from the last log
+    let lastVitalLabel: string | null = null;
+    let lastVitalValue: string | null = null;
+    if (lastLog) {
+      if (lastLog.systolic != null && lastLog.diastolic != null) {
+        lastVitalLabel = "BP";
+        lastVitalValue = `${lastLog.systolic}/${lastLog.diastolic} mmHg`;
+      } else if (lastLog.bloodSugar != null) {
+        lastVitalLabel = "Blood Sugar";
+        lastVitalValue = `${lastLog.bloodSugar} mg/dL`;
+      } else if (lastLog.heartRate != null) {
+        lastVitalLabel = "Heart Rate";
+        lastVitalValue = `${lastLog.heartRate} bpm`;
+      } else if (lastLog.oxygenSaturation != null) {
+        lastVitalLabel = "SpO2";
+        lastVitalValue = `${lastLog.oxygenSaturation}%`;
+      } else if (lastLog.weight != null) {
+        lastVitalLabel = "Weight";
+        lastVitalValue = `${lastLog.weight} kg`;
+      }
+    }
+    const hasCriticalAlert = recentAlerts.some((a) => a.severity === "critical");
+    const hasWarningAlert = recentAlerts.some((a) => a.severity === "warning");
     return {
       id: rel.id,
       patientUserId: rel.patientUserId,
       name: patient?.name || "",
       email: patient?.email || "",
-      lastLogDate: recentLogs[0]?.date || null,
+      lastLogDate: lastLog?.date || null,
+      lastVitalLabel,
+      lastVitalValue,
+      hasCriticalAlert,
+      hasWarningAlert,
       medications: activeMeds.map((m) => ({ id: m.id, name: m.name, isActive: m.isActive })),
       alerts: recentAlerts.map((a) => ({ id: a.id, severity: a.severity })),
     };

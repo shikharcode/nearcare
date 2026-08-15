@@ -116,6 +116,8 @@ export const doctorProfiles = pgTable("doctor_profiles", {
   hospital: text("hospital"),
   phone: text("phone"),
   bio: text("bio"),
+  yearsOfExperience: integer("years_of_experience"),
+  languages: text("languages"), // comma separated
   isVerified: boolean("is_verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

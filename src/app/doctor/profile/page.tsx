@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Stethoscope, Save, ExternalLink } from "lucide-react";
+import { Stethoscope, Save, ExternalLink, UserCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useUser } from "@clerk/nextjs";
+
+const SPECIALTIES = [
+  "Cardiologist",
+  "General Physician",
+  "Endocrinologist",
+  "Orthopedic",
+  "Neurologist",
+  "Gynecologist",
+  "Dermatologist",
+  "Psychiatrist",
+  "Pediatrician",
+  "Other",
+];
 
 interface DoctorProfile {
   specialty: string;
@@ -16,32 +30,48 @@ interface DoctorProfile {
   hospital: string;
   phone: string;
   bio: string;
+  yearsOfExperience: string;
+  languages: string;
 }
 
+const emptyProfile: DoctorProfile = {
+  specialty: "",
+  licenseNumber: "",
+  hospital: "",
+  phone: "",
+  bio: "",
+  yearsOfExperience: "",
+  languages: "",
+};
+
 export default function DoctorProfilePage() {
-  const [profile, setProfile] = useState<DoctorProfile>({
-    specialty: "",
-    licenseNumber: "",
-    hospital: "",
-    phone: "",
-    bio: "",
-  });
+  const { user } = useUser();
+  const [profile, setProfile] = useState<DoctorProfile>(emptyProfile);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isNew, setIsNew] = useState(false);
 
   useEffect(() => {
     fetch("/api/doctor/profile")
       .then((r) => r.json())
       .then((data) => {
-        const p = data.profile ?? data;
-        if (p) {
-          setProfile({
-            specialty: p.specialty ?? "",
-            licenseNumber: p.licenseNumber ?? "",
-            hospital: p.hospital ?? "",
-            phone: p.phone ?? "",
-            bio: p.bio ?? "",
-          });
+        if (data && typeof data === "object" && !data.error) {
+          // {} means no profile yet (new doctor)
+          const hasProfile = Object.keys(data).length > 0;
+          if (hasProfile) {
+            setProfile({
+              specialty: data.specialty ?? "",
+              licenseNumber: data.licenseNumber ?? "",
+              hospital: data.hospital ?? "",
+              phone: data.phone ?? "",
+              bio: data.bio ?? "",
+              yearsOfExperience: data.yearsOfExperience != null ? String(data.yearsOfExperience) : "",
+              languages: data.languages ?? "",
+            });
+            setIsNew(false);
+          } else {
+            setIsNew(true);
+          }
         }
       })
       .catch(() => toast.error("Failed to load profile"))
@@ -59,8 +89,9 @@ export default function DoctorProfilePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to save");
       toast.success("Profile saved successfully");
-    } catch (err: any) {
-      toast.error(err.message);
+      setIsNew(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -69,6 +100,16 @@ export default function DoctorProfilePage() {
   function handleChange(field: keyof DoctorProfile, value: string) {
     setProfile((prev) => ({ ...prev, [field]: value }));
   }
+
+  // Derive initials for avatar
+  const initials = user?.fullName
+    ? user.fullName
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "DR";
 
   return (
     <div>
@@ -98,6 +139,19 @@ export default function DoctorProfilePage() {
         </Link>
       </div>
 
+      {/* New profile setup banner */}
+      {!loading && isNew && (
+        <div className="mb-6 flex items-start gap-3 px-4 py-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-xl">
+          <UserCircle2 className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Set up your doctor profile to start seeing patients</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+              Complete your professional details below so patients can find and trust you.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Profile form */}
       <Card className="dark:bg-gray-900 dark:border-gray-800">
         <CardHeader>
@@ -112,17 +166,28 @@ export default function DoctorProfilePage() {
             </div>
           ) : (
             <div className="space-y-5">
+              {/* Doctor avatar */}
+              <div className="flex justify-center mb-2">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-2xl font-bold shadow-lg select-none">
+                  {initials}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Specialty */}
                 <div className="space-y-1.5">
                   <Label htmlFor="specialty" className="dark:text-gray-300">Specialty</Label>
-                  <Input
+                  <select
                     id="specialty"
-                    placeholder="e.g. Cardiology, General Practice"
                     value={profile.specialty}
                     onChange={(e) => handleChange("specialty", e.target.value)}
-                    className="dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
-                  />
+                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  >
+                    <option value="">Select specialty...</option>
+                    {SPECIALTIES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* License number */}
@@ -133,7 +198,7 @@ export default function DoctorProfilePage() {
                     placeholder="e.g. MD-123456"
                     value={profile.licenseNumber}
                     onChange={(e) => handleChange("licenseNumber", e.target.value)}
-                    className="dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                    className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
                   />
                 </div>
 
@@ -145,7 +210,7 @@ export default function DoctorProfilePage() {
                     placeholder="e.g. City General Hospital"
                     value={profile.hospital}
                     onChange={(e) => handleChange("hospital", e.target.value)}
-                    className="dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                    className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
                   />
                 </div>
 
@@ -158,8 +223,36 @@ export default function DoctorProfilePage() {
                     placeholder="e.g. +1 555 000 0000"
                     value={profile.phone}
                     onChange={(e) => handleChange("phone", e.target.value)}
-                    className="dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                    className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
                   />
+                </div>
+
+                {/* Years of experience */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="yearsOfExperience" className="dark:text-gray-300">Years of Experience</Label>
+                  <Input
+                    id="yearsOfExperience"
+                    type="number"
+                    min="0"
+                    max="60"
+                    placeholder="e.g. 10"
+                    value={profile.yearsOfExperience}
+                    onChange={(e) => handleChange("yearsOfExperience", e.target.value)}
+                    className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                  />
+                </div>
+
+                {/* Languages */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="languages" className="dark:text-gray-300">Languages Spoken</Label>
+                  <Input
+                    id="languages"
+                    placeholder="e.g. English, Hindi, Spanish"
+                    value={profile.languages}
+                    onChange={(e) => handleChange("languages", e.target.value)}
+                    className="h-11 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                  />
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Comma separated</p>
                 </div>
               </div>
 
@@ -176,10 +269,14 @@ export default function DoctorProfilePage() {
                 />
               </div>
 
-              <div className="flex justify-end pt-2">
-                <Button onClick={handleSave} disabled={saving} className="gap-2">
+              <div className="pt-2">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full h-12 gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md transition-all md:w-auto md:min-w-48"
+                >
                   <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save Profile"}
+                  {saving ? "Saving..." : isNew ? "Create Profile" : "Save Profile"}
                 </Button>
               </div>
             </div>
