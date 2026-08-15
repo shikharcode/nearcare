@@ -9,8 +9,12 @@ export interface AlertResult {
   value: string;
 }
 
-export function checkThresholds(log: Record<string, any>): AlertResult[] {
+export function checkThresholds(
+  log: Record<string, any>,
+  context: { exerciseMinutes?: number | null } = {}
+): AlertResult[] {
   const alerts: AlertResult[] = [];
+  const { exerciseMinutes } = context;
 
   if (log.systolic && log.diastolic) {
     if (log.systolic > 180 || log.diastolic > 120)
@@ -22,16 +26,21 @@ export function checkThresholds(log: Record<string, any>): AlertResult[] {
   }
 
   if (log.heartRate) {
-    if (log.heartRate > 120)
+    if (log.heartRate > 150)
+      alerts.push({ type: "heart_rate", severity: "critical", message: "Heart rate is critically elevated", value: log.heartRate + " bpm" });
+    else if (log.heartRate > 120 && !(exerciseMinutes != null && exerciseMinutes >= 20))
       alerts.push({ type: "heart_rate", severity: "warning", message: "Heart rate is elevated", value: log.heartRate + " bpm" });
     else if (log.heartRate < 50)
       alerts.push({ type: "heart_rate", severity: "warning", message: "Heart rate is lower than normal", value: log.heartRate + " bpm" });
   }
 
   if (log.bloodSugar) {
-    if (log.bloodSugar < 70)
-      alerts.push({ type: "blood_sugar", severity: "critical", message: "Blood sugar is dangerously low — take action immediately", value: log.bloodSugar + " mg/dL" });
-    else if (log.bloodSugar > 250)
+    if (log.bloodSugar < 70) {
+      const lowMsg = exerciseMinutes != null && exerciseMinutes >= 30
+        ? "Blood sugar low after exercise — have a snack immediately"
+        : "Blood sugar is dangerously low — take action immediately";
+      alerts.push({ type: "blood_sugar", severity: "critical", message: lowMsg, value: log.bloodSugar + " mg/dL" });
+    } else if (log.bloodSugar > 250)
       alerts.push({ type: "blood_sugar", severity: "critical", message: "Blood sugar is critically high", value: log.bloodSugar + " mg/dL" });
     else if (log.bloodSugar > 180)
       alerts.push({ type: "blood_sugar", severity: "warning", message: "Blood sugar is above normal range", value: log.bloodSugar + " mg/dL" });
@@ -40,7 +49,7 @@ export function checkThresholds(log: Record<string, any>): AlertResult[] {
   if (log.temperature) {
     if (log.temperature > 39.5)
       alerts.push({ type: "temperature", severity: "critical", message: "Very high fever detected", value: log.temperature + "°C" });
-    else if (log.temperature > 38)
+    else if (log.temperature > 37.5)
       alerts.push({ type: "temperature", severity: "warning", message: "Fever detected", value: log.temperature + "°C" });
   }
 
@@ -51,8 +60,8 @@ export function checkThresholds(log: Record<string, any>): AlertResult[] {
       alerts.push({ type: "spo2", severity: "warning", message: "Oxygen saturation is below normal", value: log.oxygenSaturation + "%" });
   }
 
-  if (log.painLevel && log.painLevel >= 8)
-    alerts.push({ type: "pain", severity: "warning", message: "Severe pain reported", value: log.painLevel + "/10" });
+  if (log.painLevel && log.painLevel >= 7)
+    alerts.push({ type: "pain", severity: "warning", message: "Severe pain reported — monitor closely and contact your doctor if it persists", value: log.painLevel + "/10" });
 
   return alerts;
 }

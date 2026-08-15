@@ -582,6 +582,11 @@ function ContactCard({
   }
 
   async function handleSendTest() {
+    if (!contact.alertsEnabled) {
+      toast.error(`Alerts are paused for ${contact.name}. Enable alerts first.`)
+      setTestDialogOpen(false)
+      return
+    }
     setSendingTest(true)
     try {
       const res = await fetch("/api/alerts/test", {
@@ -589,7 +594,14 @@ function ContactCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contactId: contact.id }),
       })
-      if (!res.ok) throw new Error("Failed")
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !(data as { success?: boolean }).success) {
+        const msg =
+          (data as { error?: string }).error ||
+          "Could not send test alert. Please try again."
+        toast.error(msg)
+        return
+      }
       toast.success(`Test alert sent to ${contact.name}.`)
       setTestDialogOpen(false)
     } catch {
@@ -868,6 +880,14 @@ function ContactCard({
                   </DialogHeader>
 
                   <div className="mt-2 space-y-4">
+                    {!contact.alertsEnabled && (
+                      <div className="flex items-start gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3">
+                        <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                          Alerts are paused for {contact.name}. Enable alerts before sending a test.
+                        </p>
+                      </div>
+                    )}
                     <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed">
                       Send a test email to{" "}
                       <span className="font-semibold text-gray-900 dark:text-white">
@@ -897,7 +917,7 @@ function ContactCard({
                       <Button
                         type="button"
                         onClick={handleSendTest}
-                        disabled={sendingTest}
+                        disabled={sendingTest || !contact.alertsEnabled}
                         className="h-11 rounded-xl gap-2"
                       >
                         <Send className="h-4 w-4" />

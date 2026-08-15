@@ -22,6 +22,7 @@ import {
   Heart,
   Download,
   CheckCircle2,
+  FileHeart,
 } from "lucide-react";
 import {
   Sheet,
@@ -40,6 +41,7 @@ const navSections = [
       { href: "/dashboard/health-log", label: "Health Log", icon: Activity },
       { href: "/dashboard/medications", label: "Medications", icon: Pill },
       { href: "/dashboard/documents", label: "Documents", icon: FileText },
+      { href: "/dashboard/passport", label: "Health Passport", icon: FileHeart },
     ],
   },
   {
@@ -84,6 +86,7 @@ const allLinks = [
   { href: "/dashboard/family", label: "Family", icon: Users },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
   { href: "/dashboard/import", label: "Import Data", icon: Download },
+  { href: "/dashboard/passport", label: "Health Passport", icon: FileHeart },
 ];
 
 const bottomNavLinks = allLinks.filter((l) => BOTTOM_NAV_HREFS.includes(l.href));
@@ -98,6 +101,7 @@ const moreLinks = [
   { href: "/dashboard/search", label: "Search", icon: Search },
   { href: "/dashboard/insights", label: "Insights", icon: TrendingUp },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
+  { href: "/dashboard/passport", label: "Health Passport", icon: FileHeart },
 ];
 
 // Icon background colors for More sheet grid
@@ -110,6 +114,7 @@ const moreIconColors: Record<string, string> = {
   "/dashboard/search": "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400",
   "/dashboard/insights": "bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400",
   "/dashboard/profile": "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
+  "/dashboard/passport": "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400",
 };
 
 export function SidebarNav({ mobile }: { mobile?: boolean }) {

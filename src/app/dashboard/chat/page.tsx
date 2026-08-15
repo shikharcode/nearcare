@@ -39,6 +39,9 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+const MAX_CHARS = 500;
+const COUNTER_THRESHOLD = 400;
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -166,6 +169,8 @@ export default function ChatPage() {
   }
 
   const hasMessages = messages.length > 0;
+  const charsLeft = MAX_CHARS - input.length;
+  const showCounter = input.length > COUNTER_THRESHOLD;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-950">
@@ -203,21 +208,21 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {hasMessages && (
-          <button
-            onClick={clearConversation}
-            className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span className="text-xs font-medium">Clear</span>
-          </button>
-        )}
+        {/* Clear chat button — always visible */}
+        <button
+          onClick={clearConversation}
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 min-h-[44px]"
+          aria-label="Clear chat"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="text-xs font-medium">Clear</span>
+        </button>
       </div>
 
       {/* Message Area */}
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 bg-gray-50 dark:bg-gray-950">
 
-        {/* Empty State */}
+        {/* Empty State — includes suggested questions */}
         {!hasMessages && !loading && (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center px-4">
             {/* Large Gemini-inspired icon */}
@@ -238,7 +243,7 @@ export default function ChatPage() {
               </p>
             </div>
 
-            {/* Suggested Questions — large chips */}
+            {/* Suggested Questions — large chips, only when no messages */}
             <div className="w-full max-w-sm space-y-2.5">
               {STARTER_QUESTIONS.map((q) => (
                 <button
@@ -257,73 +262,68 @@ export default function ChatPage() {
         )}
 
         {/* Messages */}
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={cn(
-              "flex items-end gap-2",
-              msg.role === "user" ? "justify-end" : "justify-start"
-            )}
-          >
-            {/* AI Avatar */}
-            {msg.role === "assistant" && (
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/20 mb-5">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-            )}
-
-            <div className={cn("flex flex-col gap-1", msg.role === "user" ? "items-end" : "items-start")}>
+        {messages.map((msg, i) => {
+          const isStreamingCurrent = msg.role === "assistant" && msg.streaming === true;
+          return (
+            <div key={i}>
               <div
                 className={cn(
-                  "max-w-[85%] px-4 py-3 text-base leading-relaxed whitespace-pre-wrap break-words shadow-sm",
-                  msg.role === "user"
-                    ? "bg-gradient-to-br from-blue-600 to-blue-500 text-white rounded-[20px_20px_4px_20px] shadow-blue-500/20"
-                    : cn(
-                        "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-[20px_20px_20px_4px]",
-                        (!msg.text && msg.streaming) ? "min-w-[60px]" : ""
-                      )
+                  "flex items-end gap-2",
+                  msg.role === "user" ? "justify-end" : "justify-start"
                 )}
               >
-                {/* Loading dots when streaming with no text yet */}
-                {msg.role === "assistant" && msg.streaming && !msg.text && (
-                  <TypingDots />
+                {/* AI Avatar */}
+                {msg.role === "assistant" && (
+                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/20 mb-5">
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                  </div>
                 )}
 
-                {/* Message text */}
-                {msg.text}
+                <div className={cn("flex flex-col gap-1", msg.role === "user" ? "items-end" : "items-start")}>
+                  <div
+                    className={cn(
+                      "max-w-[85%] px-4 py-3 text-base leading-relaxed whitespace-pre-wrap break-words shadow-sm",
+                      msg.role === "user"
+                        ? "bg-gradient-to-br from-blue-600 to-blue-500 text-white rounded-[20px_20px_4px_20px] shadow-blue-500/20"
+                        : cn(
+                            "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-[20px_20px_20px_4px]",
+                            (!msg.text && msg.streaming) ? "min-w-[60px]" : ""
+                          )
+                    )}
+                  >
+                    {/* Loading dots when streaming with no text yet */}
+                    {msg.role === "assistant" && msg.streaming && !msg.text && (
+                      <TypingDots />
+                    )}
 
-                {/* Streaming cursor */}
-                {msg.role === "assistant" && msg.streaming && msg.text && (
-                  <span className="inline-block w-[3px] h-[1.1em] bg-blue-500 align-middle ml-0.5 rounded-sm animate-[blink_1s_step-end_infinite]" />
-                )}
+                    {/* Message text */}
+                    {msg.text}
+
+                    {/* Streaming cursor */}
+                    {msg.role === "assistant" && msg.streaming && msg.text && (
+                      <span className="inline-block w-[3px] h-[1.1em] bg-blue-500 align-middle ml-0.5 rounded-sm animate-[blink_1s_step-end_infinite]" />
+                    )}
+                  </div>
+
+                  {/* Timestamp */}
+                  <span className="text-xs text-gray-400 dark:text-gray-600 px-1">
+                    {formatTime(msg.timestamp)}
+                  </span>
+                </div>
               </div>
 
-              {/* Timestamp */}
-              <span className="text-xs text-gray-400 dark:text-gray-600 px-1">
-                {formatTime(msg.timestamp)}
-              </span>
+              {/* Typing indicator below streaming bubble */}
+              {isStreamingCurrent && (
+                <div className={cn("flex mt-1", msg.role === "assistant" ? "justify-start pl-9" : "justify-end")}>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 italic">Typing...</span>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div ref={bottomRef} />
       </div>
-
-      {/* Compact suggested chips when conversation is active */}
-      {hasMessages && !loading && (
-        <div className="flex gap-2 px-4 py-2.5 overflow-x-auto flex-shrink-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800 scrollbar-none">
-          {STARTER_QUESTIONS.map((q) => (
-            <button
-              key={q.text}
-              onClick={() => sendMessage(q.text)}
-              className="whitespace-nowrap flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-medium bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all duration-200 flex-shrink-0 active:scale-95"
-            >
-              <span className="text-gray-400 dark:text-gray-500">{q.icon}</span>
-              {q.text}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Sticky Input Area */}
       <div className="px-4 pt-3 pb-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
@@ -339,7 +339,7 @@ export default function ChatPage() {
             <Mic className="w-5 h-5" />
           </button>
 
-          {/* Textarea */}
+          {/* Textarea + counter wrapper */}
           <div className="flex-1 relative">
             <textarea
               ref={(el) => {
@@ -348,19 +348,35 @@ export default function ChatPage() {
               }}
               value={input}
               onChange={(e) => {
-                setInput(e.target.value);
-                autoResizeTextarea();
+                // Enforce max length
+                if (e.target.value.length <= MAX_CHARS) {
+                  setInput(e.target.value);
+                  autoResizeTextarea();
+                }
               }}
               onKeyDown={handleKeyDown}
               placeholder="Ask about your health data..."
               rows={1}
               disabled={loading}
+              maxLength={MAX_CHARS}
               className={cn(
                 "w-full resize-none rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-base text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-200 min-h-12 max-h-32 leading-relaxed",
-                loading && "opacity-50 cursor-not-allowed"
+                loading && "opacity-50 cursor-not-allowed",
+                showCounter && "pb-6"
               )}
               style={{ height: "auto" }}
             />
+            {/* Character counter — shown when > 400 chars */}
+            {showCounter && (
+              <span
+                className={cn(
+                  "absolute bottom-2 right-3 text-xs font-medium pointer-events-none",
+                  charsLeft <= 20 ? "text-red-500" : "text-gray-400 dark:text-gray-500"
+                )}
+              >
+                {input.length}/{MAX_CHARS}
+              </span>
+            )}
           </div>
 
           {/* Send button */}

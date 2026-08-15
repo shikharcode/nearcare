@@ -2,9 +2,10 @@
   "name": "NearCare — Personal Health OS",
   "short_name": "NearCare",
   "description": "Track your health, medications, and medical history",
+  "id": "/dashboard",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#0f1629",
   "theme_color": "#2563eb",
   "orientation": "portrait",
   "icons": [
@@ -13,6 +14,11 @@
   ],
   "screenshots": [
     { "src": "/screenshot-dashboard.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide" }
+  ],
+  "shortcuts": [
+    { "name": "Daily Check-in", "short_name": "Check In", "url": "/dashboard/checkin" },
+    { "name": "Health Log", "short_name": "Log", "url": "/dashboard/health-log" },
+    { "name": "Medications", "short_name": "Meds", "url": "/dashboard/medications" }
   ],
   "categories": ["health", "medical", "lifestyle"],
   "lang": "en-US"

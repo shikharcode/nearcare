@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const jsonModel = genAI.getGenerativeModel({
-  model: "gemini-flash-lite-latest",
+  model: "gemini-2.5-flash-lite",
   generationConfig: { responseMimeType: "application/json" },
 });
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "text is required" }, { status: 400 });
   }
 
-  const prompt = `You are a health data extraction assistant. Parse the following plain English health description and extract any health metrics mentioned.
+  const prompt = `You are a health data extraction assistant for an Indian health app. Parse the following plain English health description and extract any health metrics mentioned.
 
 User input: "${text.trim()}"
 
@@ -57,6 +57,16 @@ The available fields and their types are:
 - painLevel: integer 0-10 (0=none, 10=worst)
 - symptoms: comma-separated string of symptoms mentioned (e.g. "headache, nausea")
 - notes: any additional context or observations not captured in other fields
+
+Indian food and drink references for water/calorie estimation:
+- chai / chai tea = tea, approximately 150ml water (count toward water intake)
+- daal / dal = lentil soup, approximately 200ml water per serving (count toward water intake)
+- roti / chapati / phulka = Indian flatbread, approximately 40g per piece
+- rice / chawal = cooked rice, approximately 150g per standard serving
+- sabzi / curry = vegetable dish; note in the notes field if no calorie count is given
+- lassi = yogurt drink, approximately 250ml; count toward water intake
+- nimbu pani / shikanji = lemon water, approximately 250ml; count toward water intake
+- If the user mentions food items, estimate calories where reasonable and note Indian food items in the notes field.
 
 Mood inference rules:
 - "feeling great/wonderful/excellent/amazing" → 5

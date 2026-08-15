@@ -13,9 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { MedicationAutocomplete } from "@/components/medications/medication-autocomplete";
+import { type InteractionResult } from "@/lib/medication-interactions";
 import { toast } from "sonner";
 import { today, cn } from "@/lib/utils";
-import { Plus, Check, X, Pill, Loader2, Scan, Pencil, Info, ClipboardList, QrCode } from "lucide-react";
+import { Plus, Check, X, Pill, Loader2, Scan, Pencil, Info, ClipboardList, QrCode, AlertTriangle } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(1, "Name required"),
@@ -57,8 +58,89 @@ type Medication = {
   startDate?: string;
   endDate?: string;
 };
+type MedWithInteractions = Medication & { interactions?: InteractionResult | null };
 type MedLog = { id: string; medicationId: string; taken: boolean; date: string };
 type ScannedMed = { name: string; dosage?: string; frequency?: string; duration?: string };
+
+const SEVERITY_STYLES: Record<"mild" | "moderate" | "severe", string> = {
+  mild: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300",
+  moderate: "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300",
+  severe: "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400",
+};
+
+function InteractionWarningDialog({
+  medId,
+  interactions,
+  onClose,
+  onRemove,
+}: {
+  medId: string;
+  interactions: InteractionResult;
+  onClose: () => void;
+  onRemove: (id: string) => void;
+}) {
+  const [removing, setRemoving] = useState(false);
+
+  const handleRemove = async () => {
+    setRemoving(true);
+    await onRemove(medId);
+    onClose();
+  };
+
+  return (
+    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+            Drug Interaction Detected
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="space-y-3">
+            {interactions.interactions.map((item, i) => (
+              <div key={i} className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-4 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-gray-900 dark:text-white text-sm">{item.med1}</span>
+                  <span className="text-gray-400 text-xs">+</span>
+                  <span className="font-semibold text-gray-900 dark:text-white text-sm">{item.med2}</span>
+                  <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full capitalize ml-auto", SEVERITY_STYLES[item.severity])}>
+                    {item.severity}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{item.recommendation}</p>
+              </div>
+            ))}
+          </div>
+          {interactions.generalAdvice && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-950/30 rounded-xl px-4 py-3">
+              {interactions.generalAdvice}
+            </p>
+          )}
+          <div className="flex gap-3 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 h-12 rounded-xl"
+              onClick={onClose}
+            >
+              Keep Medication
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 h-12 rounded-xl font-semibold bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleRemove}
+              disabled={removing}
+            >
+              {removing ? "Removing..." : "Remove"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function dateNDaysAgo(n: number): string {
   return format(subDays(new Date(), n), "yyyy-MM-dd");
@@ -202,6 +284,9 @@ export default function MedicationsPage() {
   const [editMedName, setEditMedName] = useState("");
   const [editLoading, setEditLoading] = useState(false);
 
+  const [interactionWarning, setInteractionWarning] = useState<InteractionResult | null>(null);
+  const [interactionMedId, setInteractionMedId] = useState<string | null>(null);
+
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) });
@@ -239,10 +324,14 @@ export default function MedicationsPage() {
         body: JSON.stringify({ ...data, name: medName || data.name }),
       });
       if (!res.ok) throw new Error();
-      const med = await res.json();
+      const med: MedWithInteractions = await res.json();
       setMedications(prev => [...prev, med]);
       reset(); setMedName(""); setOpen(false);
       toast.success("Medication added!");
+      if (med.interactions?.hasInteractions === true) {
+        setInteractionWarning(med.interactions);
+        setInteractionMedId(med.id);
+      }
     } catch { toast.error("Failed to add medication."); }
     finally { setLoading(false); }
   };
@@ -778,6 +867,16 @@ export default function MedicationsPage() {
           </div>
         )}
       </div>
+
+      {/* Interaction warning dialog */}
+      {interactionWarning && interactionMedId && (
+        <InteractionWarningDialog
+          medId={interactionMedId}
+          interactions={interactionWarning}
+          onClose={() => { setInteractionWarning(null); setInteractionMedId(null); }}
+          onRemove={async (id) => { await deleteMed(id); }}
+        />
+      )}
     </div>
   );
 }

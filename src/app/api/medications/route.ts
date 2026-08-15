@@ -1,7 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users, medications } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { checkMedicationInteractions } from "@/lib/medication-interactions";
 
 export async function GET() {
   const { userId } = await auth();
@@ -10,7 +11,6 @@ export async function GET() {
   const meds = await db.select().from(medications)
     .where(eq(medications.userId, userId))
     .orderBy(medications.createdAt);
-
   return Response.json(meds);
 }
 
@@ -35,5 +35,24 @@ export async function POST(request: Request) {
     isActive: true,
   }).returning();
 
-  return Response.json(med, { status: 201 });
+  // Check interactions against existing active medications (non-blocking)
+  let interactions = null;
+  try {
+    const existingMeds = await db
+      .select({ name: medications.name })
+      .from(medications)
+      .where(and(eq(medications.userId, userId), eq(medications.isActive, true)));
+
+    const existingNames = existingMeds
+      .map((m) => m.name)
+      .filter((n) => n !== body.name);
+
+    if (existingNames.length > 0) {
+      interactions = await checkMedicationInteractions(userId, body.name, existingNames);
+    }
+  } catch {
+    interactions = null;
+  }
+
+  return Response.json({ ...med, interactions }, { status: 201 });
 }

@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const chatModel = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+const chatModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 export async function POST(request: Request) {
   const { userId } = await auth();

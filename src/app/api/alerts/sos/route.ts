@@ -185,5 +185,9 @@ export async function POST() {
     emailSent,
   });
 
-  return Response.json({ success: true, notified: contacts.length });
+  return Response.json({
+    success: true,
+    notified: contacts.length,
+    ...(contacts.length === 0 && { noContacts: true }),
+  });
 }

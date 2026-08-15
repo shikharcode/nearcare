@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     symptoms: body.symptoms, notes: body.notes, painLevel: body.painLevel,
   }).returning();
 
-  const alerts = checkThresholds(body);
+  const alerts = checkThresholds(body, { exerciseMinutes: body.exercise ?? null });
 
   if (alerts.length > 0) {
     await db.insert(healthAlerts).values(

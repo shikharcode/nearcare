@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { PhoneCall } from "lucide-react"
+import Link from "next/link"
 import {
   Dialog,
   DialogContent,
@@ -81,27 +82,53 @@ export function SosButton() {
 
       <DialogContent showCloseButton={!loading}>
         {notified !== null ? (
-          /* Success state */
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-2xl">
-              ✓
+          notified > 0 ? (
+            /* Success state — contacts were notified */
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-2xl">
+                ✓
+              </div>
+              <p className="text-base font-semibold text-green-700">
+                Your family has been notified
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {notified} contact{notified > 1 ? "s" : ""} received your emergency alert.
+              </p>
+              <DialogClose
+                render={
+                  <Button className="mt-2 w-full" />
+                }
+              >
+                Close
+              </DialogClose>
             </div>
-            <p className="text-base font-semibold text-green-700">
-              Your family has been notified
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {notified === 0
-                ? "No contacts with alerts enabled were found."
-                : `${notified} contact${notified > 1 ? "s" : ""} received your emergency alert.`}
-            </p>
-            <DialogClose
-              render={
-                <Button className="mt-2 w-full" />
-              }
-            >
-              Close
-            </DialogClose>
-          </div>
+          ) : (
+            /* Warning state — SOS sent but no family contacts configured */
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-2xl">
+                ⚠
+              </div>
+              <p className="text-base font-semibold text-amber-700">
+                SOS sent, but no contacts notified
+              </p>
+              <p className="text-sm text-muted-foreground">
+                You have no family contacts set up. Add contacts in Settings → Family so someone
+                receives your alerts next time.
+              </p>
+              <Link href="/dashboard/family" className="mt-2 w-full">
+                <Button variant="outline" className="w-full border-amber-400 text-amber-700 hover:bg-amber-50">
+                  Go to Family Settings
+                </Button>
+              </Link>
+              <DialogClose
+                render={
+                  <Button variant="ghost" className="w-full" />
+                }
+              >
+                Close
+              </DialogClose>
+            </div>
+          )
         ) : (
           /* Confirmation state */
           <>

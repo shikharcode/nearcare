@@ -125,8 +125,16 @@ const MOOD_LABELS: Record<number, string> = {
   1: "Terrible", 2: "Bad", 3: "Okay", 4: "Good", 5: "Great",
 };
 
+const MOOD_EMOJIS: Record<number, string> = {
+  1: "😞", 2: "😕", 3: "😐", 4: "🙂", 5: "😄",
+};
+
 const PAIN_LABELS: Record<number, string> = {
   0: "No pain", 3: "Mild pain", 6: "Moderate pain", 9: "Severe pain",
+};
+
+const PAIN_EMOJIS: Record<number, string> = {
+  0: "✅", 3: "🟡", 6: "🟠", 9: "🔴",
 };
 
 // ── Progress Dots ─────────────────────────────────────────────────────────────
@@ -342,33 +350,6 @@ function StepMedications({
             />
           ))}
         </div>
-      ) : medications.length === 0 ? (
-        <div className="w-full flex flex-col items-center gap-6 py-6">
-          <div className="w-20 h-20 rounded-3xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-lg">
-            <span style={{ fontSize: "40px" }}>💊</span>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-              No active medications
-            </p>
-            <p className="text-base text-gray-500 dark:text-gray-400 mt-1">
-              Nothing to check off right now
-            </p>
-          </div>
-          <button
-            onClick={onSkip}
-            className={cn(
-              "w-full rounded-2xl text-xl font-bold text-white shadow-lg",
-              "bg-gradient-to-r from-blue-600 to-blue-500",
-              "hover:from-blue-700 hover:to-blue-600 hover:shadow-xl hover:scale-[1.02]",
-              "active:scale-[0.98] transition-all duration-150",
-              "focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400"
-            )}
-            style={{ height: 56 }}
-          >
-            Continue
-          </button>
-        </div>
       ) : (
         <div className="flex flex-col gap-3 w-full">
           {medications.map((med) => {
@@ -436,7 +417,7 @@ function StepMedications({
         </div>
       )}
 
-      {medications.length > 0 && (
+      {!loading && medications.length > 0 && (
         <div className="flex flex-col gap-3 w-full">
           <button
             onClick={onDone}
@@ -464,20 +445,34 @@ function StepMedications({
         </div>
       )}
 
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-lg text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-semibold transition-colors"
-      >
-        <ChevronLeft className="w-5 h-5" />
-        Back
-      </button>
+      {!loading && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-lg text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-semibold transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          Back
+        </button>
+      )}
     </div>
   );
 }
 
 // ── Success Screen ────────────────────────────────────────────────────────────
 
-function SuccessScreen({ onViewHealth }: { onViewHealth: () => void }) {
+function SuccessScreen({
+  onViewHealth,
+  mood,
+  pain,
+  medsTakenCount,
+}: {
+  onViewHealth: () => void;
+  mood: number | null;
+  pain: number | null;
+  medsTakenCount: number;
+}) {
+  const moodOpt = mood ? MOOD_OPTIONS.find((m) => m.value === mood) : null;
+
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-lg mx-auto text-center">
       <style>{`
@@ -520,6 +515,7 @@ function SuccessScreen({ onViewHealth }: { onViewHealth: () => void }) {
         .fade-up-1 { animation: fade-up 0.5s ease-out 0.6s both; }
         .fade-up-2 { animation: fade-up 0.5s ease-out 0.75s both; }
         .fade-up-3 { animation: fade-up 0.5s ease-out 0.9s both; }
+        .fade-up-4 { animation: fade-up 0.5s ease-out 1.05s both; }
       `}</style>
 
       {/* Confetti */}
@@ -574,27 +570,61 @@ function SuccessScreen({ onViewHealth }: { onViewHealth: () => void }) {
         </p>
       </div>
 
-      <div className="fade-up-2 w-full rounded-2xl bg-white dark:bg-gray-800 shadow-xl p-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-          <span style={{ fontSize: "24px" }}>🩺</span>
-        </div>
-        <div className="text-left">
-          <p className="text-base font-semibold text-gray-900 dark:text-gray-50">Check-in saved</p>
-          <p className="text-base text-gray-500 dark:text-gray-400">Your health data has been recorded for today.</p>
+      {/* What was logged */}
+      <div className="fade-up-2 w-full flex flex-col gap-3">
+        {/* Mood */}
+        {mood !== null && moodOpt && (
+          <div className={cn(
+            "w-full rounded-2xl p-4 flex items-center gap-4",
+            moodOpt.selectedBg,
+            "border-2",
+            moodOpt.selectedBorder
+          )}>
+            <span style={{ fontSize: "36px", lineHeight: 1 }}>{MOOD_EMOJIS[mood]}</span>
+            <div className="text-left">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Mood logged</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-50">{MOOD_LABELS[mood]}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Pain */}
+        {pain !== null && (
+          <div className="w-full rounded-2xl p-4 flex items-center gap-4 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
+            <span style={{ fontSize: "36px", lineHeight: 1 }}>{PAIN_EMOJIS[pain] ?? "🩺"}</span>
+            <div className="text-left">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pain level</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-50">{PAIN_LABELS[pain] ?? `Level ${pain}`}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Meds */}
+        <div className="w-full rounded-2xl bg-white dark:bg-gray-800 shadow-xl p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+            <span style={{ fontSize: "24px" }}>💊</span>
+          </div>
+          <div className="text-left">
+            <p className="text-base font-semibold text-gray-900 dark:text-gray-50">Medications</p>
+            <p className="text-base text-gray-500 dark:text-gray-400">
+              {medsTakenCount > 0
+                ? `${medsTakenCount} med${medsTakenCount === 1 ? "" : "s"} marked taken`
+                : "No meds marked taken"}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="fade-up-3 w-full">
+      <div className="fade-up-4 w-full">
         <button
           onClick={onViewHealth}
           className={cn(
-            "w-full rounded-2xl text-xl font-bold text-white shadow-xl",
+            "h-14 w-full rounded-2xl text-xl font-bold text-white shadow-xl",
             "bg-gradient-to-r from-blue-600 to-blue-500",
             "hover:from-blue-700 hover:to-blue-600 hover:shadow-2xl hover:scale-[1.02]",
             "active:scale-[0.98] transition-all duration-150",
             "focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400"
           )}
-          style={{ height: 56 }}
         >
           View Dashboard
         </button>
@@ -607,9 +637,11 @@ function SuccessScreen({ onViewHealth }: { onViewHealth: () => void }) {
 
 function AlreadyCheckedIn({
   log,
+  medCount,
   onViewHealth,
 }: {
   log: ExistingLog;
+  medCount: number;
   onViewHealth: () => void;
 }) {
   const moodNum = log.mood ?? 0;
@@ -650,7 +682,7 @@ function AlreadyCheckedIn({
             moodOpt?.selectedBg ?? "bg-gray-50 dark:bg-gray-700/50"
           )}>
             <span style={{ fontSize: "48px", lineHeight: 1 }}>
-              {["", "😞", "😕", "😐", "🙂", "😄"][moodNum] ?? "❓"}
+              {MOOD_EMOJIS[moodNum] ?? "❓"}
             </span>
             <div className="text-left">
               <p className="text-base text-gray-500 dark:text-gray-400 font-medium">Mood</p>
@@ -662,7 +694,9 @@ function AlreadyCheckedIn({
         )}
         {painNum >= 0 && (
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
-            <span style={{ fontSize: "48px", lineHeight: 1 }}>🩺</span>
+            <span style={{ fontSize: "48px", lineHeight: 1 }}>
+              {PAIN_EMOJIS[painNum] ?? "🩺"}
+            </span>
             <div className="text-left">
               <p className="text-base text-gray-500 dark:text-gray-400 font-medium">Pain level</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">
@@ -671,20 +705,30 @@ function AlreadyCheckedIn({
             </div>
           </div>
         )}
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+          <span style={{ fontSize: "48px", lineHeight: 1 }}>💊</span>
+          <div className="text-left">
+            <p className="text-base text-gray-500 dark:text-gray-400 font-medium">Medications</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+              {medCount > 0
+                ? `${medCount} med${medCount === 1 ? "" : "s"} marked taken`
+                : "No meds recorded"}
+            </p>
+          </div>
+        </div>
       </div>
 
       <button
         onClick={onViewHealth}
         className={cn(
-          "w-full rounded-2xl text-xl font-bold text-white shadow-xl",
+          "h-14 w-full rounded-2xl text-xl font-bold text-white shadow-xl",
           "bg-gradient-to-r from-blue-600 to-blue-500",
           "hover:from-blue-700 hover:to-blue-600 hover:shadow-2xl hover:scale-[1.02]",
           "active:scale-[0.98] transition-all duration-150",
           "focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400"
         )}
-        style={{ height: 56 }}
       >
-        View my health
+        View Dashboard
       </button>
     </div>
   );
@@ -711,7 +755,11 @@ export default function CheckInPage() {
 
   // Already checked in today
   const [existingLog, setExistingLog] = useState<ExistingLog | null>(null);
+  const [existingMedCount, setExistingMedCount] = useState(0);
   const [checkingExisting, setCheckingExisting] = useState(true);
+
+  // Track meds taken count for success screen
+  const [medsTakenCount, setMedsTakenCount] = useState(0);
 
   // Check for existing log on mount
   useEffect(() => {
@@ -722,7 +770,19 @@ export default function CheckInPage() {
         const logs: ExistingLog[] = await res.json();
         const todayStr = today();
         const todayLog = logs.find((l) => l.date === todayStr);
-        if (todayLog) setExistingLog(todayLog);
+        if (todayLog) {
+          setExistingLog(todayLog);
+          // Try to fetch med count for today
+          try {
+            const medRes = await fetch("/api/medications/log?date=" + todayStr);
+            if (medRes.ok) {
+              const medLogs: { taken: boolean }[] = await medRes.json();
+              setExistingMedCount(medLogs.filter((ml) => ml.taken).length);
+            }
+          } catch {
+            // ignore, just show 0
+          }
+        }
       } catch {
         // ignore — let user proceed
       } finally {
@@ -741,14 +801,22 @@ export default function CheckInPage() {
         const res = await fetch("/api/medications");
         if (!res.ok) throw new Error("Failed");
         const all: Medication[] = await res.json();
-        setMedications(all.filter((m) => m.isActive));
+        const active = all.filter((m) => m.isActive);
+        setMedications(active);
+        // If no active meds, skip directly to submission
+        if (active.length === 0) {
+          handleSubmit(true);
+        }
       } catch {
         setMedications([]);
+        // On error, skip meds step
+        handleSubmit(true);
       } finally {
         setMedsLoading(false);
       }
     }
     fetchMeds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const handleMoodSelect = useCallback((value: number) => {
@@ -786,6 +854,8 @@ export default function CheckInPage() {
           .filter(([, v]) => v)
           .map(([id]) => id);
 
+        setMedsTakenCount(takenIds.length);
+
         await Promise.all(
           takenIds.map((medicationId) =>
             fetch("/api/medications/log", {
@@ -795,6 +865,8 @@ export default function CheckInPage() {
             })
           )
         );
+      } else {
+        setMedsTakenCount(0);
       }
 
       setDone(true);
@@ -831,7 +903,7 @@ export default function CheckInPage() {
   if (existingLog && !done) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-950 dark:to-gray-900 flex items-start justify-center px-5 py-10">
-        <AlreadyCheckedIn log={existingLog} onViewHealth={goToDashboard} />
+        <AlreadyCheckedIn log={existingLog} medCount={existingMedCount} onViewHealth={goToDashboard} />
       </div>
     );
   }
@@ -840,7 +912,12 @@ export default function CheckInPage() {
   if (done) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-gray-950 dark:to-gray-900 flex items-start justify-center px-5 py-10 overflow-hidden">
-        <SuccessScreen onViewHealth={goToDashboard} />
+        <SuccessScreen
+          onViewHealth={goToDashboard}
+          mood={mood}
+          pain={pain}
+          medsTakenCount={medsTakenCount}
+        />
       </div>
     );
   }

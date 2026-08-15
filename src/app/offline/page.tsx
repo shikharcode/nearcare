@@ -1,31 +1,53 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { Heart, WifiOff, Loader2 } from "lucide-react";
 
 export default function OfflinePage() {
+  const [loading, setLoading] = useState(false);
+
+  function handleRetry() {
+    setLoading(true);
+    window.location.reload();
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4 text-center">
-      <div className="flex items-center gap-2">
-        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-          <span className="text-white font-bold text-lg">N</span>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 text-center bg-background">
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
+          <Heart className="h-6 w-6 text-white fill-white" />
         </div>
-        <span className="text-2xl font-bold text-blue-600">NearCare</span>
+        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">NearCare</span>
       </div>
 
+      <WifiOff className="h-16 w-16 text-gray-400 dark:text-gray-500" />
+
       <div className="space-y-3 max-w-sm">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           You are offline
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-          Your last health data is available below once you have visited those pages.
+        <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
+          Connect to the internet to continue using NearCare
         </p>
       </div>
 
+      <ul className="text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside text-left">
+        <li>Your recent data is cached in your browser</li>
+      </ul>
+
       <button
-        onClick={() => window.location.reload()}
-        className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors"
+        onClick={handleRetry}
+        disabled={loading}
+        className="min-h-[44px] px-6 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-70 flex items-center gap-2"
       >
-        Retry
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Retrying…
+          </>
+        ) : (
+          "Retry"
+        )}
       </button>
     </div>
   );

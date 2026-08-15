@@ -2,11 +2,12 @@ import { db } from "@/db";
 import { healthLogs, healthAlerts } from "@/db/schema";
 import { eq, desc, and, gte } from "drizzle-orm";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { subDays } from "date-fns";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const jsonModel = genAI.getGenerativeModel({
-  model: "gemini-flash-lite-latest",
+  model: "gemini-2.5-flash-lite",
   generationConfig: { responseMimeType: "application/json" },
 });
 
@@ -83,8 +84,7 @@ Do not invent anomalies — only report what the data clearly shows.`;
   if (!Array.isArray(parsed?.anomalies) || parsed.anomalies.length === 0) return;
 
   // Cutoff: 3 days ago to avoid duplicate alerts
-  const threeDaysAgo = new Date();
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  const threeDaysAgo = subDays(new Date(), 3);
 
   // Fetch recent anomaly_detected alerts to deduplicate
   const recentAlerts = await db
