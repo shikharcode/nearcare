@@ -1,0 +1,46 @@
+<svg width="1120" height="340" viewBox="0 0 1120 340" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="icongrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="neargrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa"/>
+      <stop offset="100%" style="stop-color:#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="ecggrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.3)"/>
+      <stop offset="50%" style="stop-color:rgba(255,255,255,1)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.3)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark background for preview -->
+  <rect width="1120" height="340" fill="#0f172a"/>
+
+  <!-- Icon -->
+  <rect x="20" y="20" width="300" height="300" rx="64" fill="url(#icongrad)"/>
+  <rect x="20" y="20" width="300" height="150" rx="64" fill="rgba(255,255,255,0.06)"/>
+  <path d="M170 272 C170 272 72 206 72 145 C72 112 96 90 122 90 C140 90 156 100 170 117 C184 100 200 90 218 90 C244 90 268 112 268 145 C268 206 170 272 170 272Z"
+    fill="white" fill-opacity="0.92"/>
+  <polyline points="80,150 108,150 122,126 137,178 149,140 162,150 262,150"
+    fill="none" stroke="url(#ecggrad)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- "Near" — brighter gradient for dark bg -->
+  <text x="358" y="222"
+    font-family="'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="148" font-weight="800" letter-spacing="-5"
+    fill="url(#neargrad)">Near</text>
+
+  <!-- "Care" — white on dark -->
+  <text x="735" y="222"
+    font-family="'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="148" font-weight="300" letter-spacing="-5"
+    fill="#f1f5f9">Care</text>
+
+  <!-- Tagline -->
+  <text x="360" y="268"
+    font-family="'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="24" font-weight="500" letter-spacing="7"
+    fill="#475569">YOUR PERSONAL HEALTH OS</text>
+</svg>

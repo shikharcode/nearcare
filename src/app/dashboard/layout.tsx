@@ -1,7 +1,8 @@
 import { UserButton } from "@clerk/nextjs";
 import { SignOutButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { Heart, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { NearCareLogo } from "@/components/shared/nearcare-logo";
 import React from "react";
 import { SidebarNav } from "@/components/shared/sidebar-nav";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -36,18 +37,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
         <div className="relative flex flex-col h-full">
           {/* Logo area */}
-          <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-gray-800">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-md flex-shrink-0">
-              <Heart className="h-5 w-5 text-white fill-white/80" />
-            </div>
-            <div className="min-w-0">
-              <span className="font-extrabold text-gray-900 dark:text-white text-xl leading-none block">
-                NearCare
-              </span>
-              <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 tracking-wide leading-none mt-0.5 block">
-                Your Health OS
-              </span>
-            </div>
+          <div className="flex items-center px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <NearCareLogo size="md" showTagline={false} />
           </div>
 
           <SidebarNav />
@@ -80,12 +71,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Mobile top bar */}
       <div className="fixed top-0 left-0 right-0 h-14 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 flex items-center px-4 z-20 md:hidden shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-sm">
-            <Heart className="h-4 w-4 text-white fill-white/80" />
-          </div>
-          <span className="font-extrabold text-gray-900 dark:text-white text-lg">NearCare</span>
-        </div>
+        <NearCareLogo size="sm" />
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           <UserButton />
