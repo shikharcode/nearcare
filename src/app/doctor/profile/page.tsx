@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
-import { Stethoscope, Save, ExternalLink, UserCircle2, X, Phone } from "lucide-react";
+import { Stethoscope, Save, ExternalLink, UserCircle2, X, Phone, ShieldCheck, Upload, Loader2, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,6 +196,15 @@ export default function DoctorProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isNew, setIsNew] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+
+  // Verification upload state
+  const [regNumber, setRegNumber] = useState("");
+  const [stateCouncil, setStateCouncil] = useState("");
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [verificationSubmitted, setVerificationSubmitted] = useState(false);
+  const certRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/doctor/profile")
@@ -217,6 +226,8 @@ export default function DoctorProfilePage() {
               languages: data.languages ?? "",
             });
             setIsNew(false);
+            setIsVerified(!!data.isVerified);
+            setVerificationSubmitted(!!data.verificationSubmitted);
           } else {
             setIsNew(true);
           }
@@ -234,6 +245,28 @@ export default function DoctorProfilePage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleVerificationSubmit() {
+    if (!regNumber.trim() || !stateCouncil.trim()) {
+      toast.error("Registration number and state council are required");
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("registrationNumber", regNumber.trim());
+      formData.append("stateCouncil", stateCouncil.trim());
+      if (certFile) formData.append("certificate", certFile);
+      const res = await fetch("/api/doctor/verification", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Failed to submit");
+      setVerificationSubmitted(true);
+      toast.success("Verification request submitted! We'll review within 24-48 hours.");
+    } catch {
+      toast.error("Failed to submit verification. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -441,6 +474,97 @@ export default function DoctorProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Verification Card ── */}
+      {!loading && !isNew && (
+        <Card className="dark:bg-gray-900 dark:border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-base dark:text-white flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-blue-500" />
+              Medical Registration Verification
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isVerified ? (
+              <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-green-800 dark:text-green-300">Verified Doctor ✓</p>
+                  <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">Your registration has been verified. A ✓ badge appears next to your name for patients.</p>
+                </div>
+              </div>
+            ) : verificationSubmitted ? (
+              <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
+                <Loader2 className="h-5 w-5 text-blue-500 animate-spin flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Verification Under Review</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">We're verifying your credentials against the NMC registry. This takes 24-48 hours. Questions? Email <a href="mailto:verify@nearcare.app" className="underline">verify@nearcare.app</a></p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Submit your NMC/State Medical Council registration details. We verify against the Indian Medical Register and manually confirm within 24-48 hours.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="dark:text-gray-300">Registration Number <span className="text-red-500">*</span></Label>
+                    <Input
+                      placeholder="e.g. MH-12345 or NMC-67890"
+                      value={regNumber}
+                      onChange={e => setRegNumber(e.target.value)}
+                      className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="dark:text-gray-300">State Medical Council <span className="text-red-500">*</span></Label>
+                    <Input
+                      placeholder="e.g. Maharashtra Medical Council"
+                      value={stateCouncil}
+                      onChange={e => setStateCouncil(e.target.value)}
+                      className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="dark:text-gray-300">Upload Registration Certificate (optional but speeds up review)</Label>
+                  <input ref={certRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setCertFile(e.target.files?.[0] || null)} />
+                  <div
+                    onClick={() => certRef.current?.click()}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer transition-all",
+                      certFile
+                        ? "border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700"
+                    )}
+                  >
+                    <Upload className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {certFile ? certFile.name : "Click to upload PDF, JPG or PNG"}
+                    </span>
+                    {certFile && (
+                      <button type="button" onClick={e => { e.stopPropagation(); setCertFile(null); }} className="ml-auto text-gray-400 hover:text-red-500">
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+                  <span className="flex-shrink-0">ℹ️</span>
+                  <span>We verify against the NMC Indian Medical Register at nmc.org.in. Your certificate is stored securely and only used for verification. We never share it.</span>
+                </div>
+                <Button
+                  onClick={handleVerificationSubmit}
+                  disabled={uploading || !regNumber.trim() || !stateCouncil.trim()}
+                  className="w-full h-12 rounded-xl gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {uploading ? <><Loader2 className="h-4 w-4 animate-spin" />Submitting...</> : <><ShieldCheck className="h-4 w-4" />Submit for Verification</>}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
