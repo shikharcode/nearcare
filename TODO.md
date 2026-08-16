@@ -1,6 +1,29 @@
 # NearCare — TODO & Roadmap
 
-## 🔴 High Priority (before launch)
+## 🔴 DO TOMORROW — Manual steps (30 min total)
+
+- [ ] **Vercel: Set NEXT_PUBLIC_APP_URL** (5 min)
+  - vercel.com → nearcare project → Settings → Environment Variables
+  - Add: `NEXT_PUBLIC_APP_URL` = `https://nearcare.vercel.app`
+  - Click "Redeploy" after saving
+  - Fixes: doctor invite links, caregiver links, all share URLs in production
+
+- [ ] **Clerk: Switch to production instance** (15 min)
+  - clerk.com → Create new application → select "Production"
+  - Copy new `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
+  - Update BOTH in Vercel → Settings → Environment Variables
+  - Fixes: "Development Mode" warning shown to real users, usage limits removed
+
+- [ ] **Rotate exposed API keys** (10 min)
+  - Neon dashboard → Settings → Reset password → update `DATABASE_URL` in Vercel
+  - Cloudflare R2 → API Tokens → delete old token → create new → update `R2_ACCESS_KEY_ID` + `R2_SECRET_ACCESS_KEY` in Vercel
+  - Reason: keys were briefly visible in terminal session
+
+- [ ] **Resend: Verify a sending domain** (optional but recommended)
+  - resend.com → Domains → Add Domain (e.g. nearcare.app or your domain)
+  - Add DNS records → verify
+  - Update `RESEND_FROM_EMAIL` in Vercel to `alerts@yourdomain.com`
+  - Fixes: family alert emails landing in spam for non-owner recipients
 
 - [ ] **ABHA Real Integration** — Current implementation is a placeholder (localStorage only). Real integration requires:
   - Register as Health Information Provider (HIP) at abdm.gov.in
