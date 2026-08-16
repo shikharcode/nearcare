@@ -8,6 +8,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const [existing] = await db
+    .select({ userId: medications.userId })
+    .from(medications)
+    .where(eq(medications.id, id));
+
+  if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 });
+
   const body = await request.json();
 
   const updateFields: Record<string, unknown> = {};
@@ -35,6 +44,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const [existing] = await db
+    .select({ userId: medications.userId })
+    .from(medications)
+    .where(eq(medications.id, id));
+
+  if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 });
+
   const body = await request.json();
 
   const [med] = await db.update(medications)
@@ -51,6 +69,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const [existing] = await db
+    .select({ userId: medications.userId })
+    .from(medications)
+    .where(eq(medications.id, id));
+
+  if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 });
+
   await db.delete(medications).where(and(eq(medications.id, id), eq(medications.userId, userId)));
   return Response.json({ success: true });
 }

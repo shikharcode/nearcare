@@ -238,8 +238,9 @@ describe("POST /api/medications", () => {
     })
     const res = await POST(req)
 
-    // Route does not reject — it delegates constraint checking to the DB.
-    // A mocked DB returns 201; a real DB would throw a NOT NULL error.
-    expect(res.status).toBe(201)
+    // Route validates name before hitting DB — returns 400
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/name.*required/i)
   })
 })

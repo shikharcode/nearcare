@@ -20,18 +20,41 @@ export async function POST(request: Request) {
 
   const body = await request.json();
 
+  // Validate required field: name
+  const rawName = typeof body.name === "string" ? body.name.trim() : "";
+  if (!rawName) {
+    return Response.json({ error: "name is required" }, { status: 400 });
+  }
+  if (rawName.length > 200) {
+    return Response.json({ error: "name must be 200 characters or fewer" }, { status: 400 });
+  }
+
+  // Sanitize optional string fields
+  const dosage = typeof body.dosage === "string"
+    ? body.dosage.trim().slice(0, 100) || null
+    : null;
+  const frequency = typeof body.frequency === "string"
+    ? body.frequency.trim().slice(0, 100) || null
+    : null;
+  const notes = typeof body.notes === "string"
+    ? body.notes.slice(0, 500) || null
+    : null;
+  const prescribedBy = typeof body.prescribedBy === "string"
+    ? body.prescribedBy.trim().slice(0, 200) || null
+    : null;
+
   await db.insert(users).values({ id: userId, email: "" }).onConflictDoNothing();
 
   const [med] = await db.insert(medications).values({
     userId,
-    name: body.name,
-    dosage: body.dosage,
-    frequency: body.frequency,
+    name: rawName,
+    dosage,
+    frequency,
     times: body.times,
     startDate: body.startDate,
     endDate: body.endDate,
-    prescribedBy: body.prescribedBy,
-    notes: body.notes,
+    prescribedBy,
+    notes,
     isActive: true,
   }).returning();
 

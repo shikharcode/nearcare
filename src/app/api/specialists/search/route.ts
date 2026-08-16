@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface HFRFacility {
   facilityName?: string;
@@ -38,6 +39,15 @@ function mapFacility(f: HFRFacility): MappedFacility {
 }
 
 export async function GET(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  const rl = checkRateLimit(ip, "specialists/search", 6000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before searching again." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+    );
+  }
+
   const { searchParams } = req.nextUrl;
   const speciality = searchParams.get("speciality") ?? "";
   const state = searchParams.get("state") ?? "";

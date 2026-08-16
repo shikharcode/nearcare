@@ -8,6 +8,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const [existing] = await db
+    .select({ userId: healthLogs.userId })
+    .from(healthLogs)
+    .where(eq(healthLogs.id, id));
+
+  if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 });
+
   const body = await request.json();
 
   const [log] = await db.update(healthLogs)
@@ -24,6 +33,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const [existing] = await db
+    .select({ userId: healthLogs.userId })
+    .from(healthLogs)
+    .where(eq(healthLogs.id, id));
+
+  if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 });
+
   await db.delete(healthLogs).where(and(eq(healthLogs.id, id), eq(healthLogs.userId, userId)));
   return Response.json({ success: true });
 }

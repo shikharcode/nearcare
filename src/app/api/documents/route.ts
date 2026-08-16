@@ -6,6 +6,15 @@ import { uploadFile, getSignedFileUrl } from "@/lib/r2";
 import { extractDocumentInfo } from "@/lib/gemini";
 import { randomUUID } from "crypto";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_FILE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+]);
+const MAX_NAME_LENGTH = 200;
+
 export async function GET() {
   const { userId } = await auth();
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,11 +38,31 @@ export async function POST(request: Request) {
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const formData = await request.formData();
-  const file = formData.get("file") as File;
-  const name = formData.get("name") as string;
+  const file = formData.get("file");
+  const rawName = formData.get("name") as string | null;
   const type = formData.get("type") as string;
 
-  if (!file) return Response.json({ error: "No file provided" }, { status: 400 });
+  // Check that file is actually a File object (not empty or a plain string)
+  if (!file || typeof file === "string" || !(file instanceof File)) {
+    return Response.json({ error: "No file provided" }, { status: 400 });
+  }
+
+  if (file.size === 0) {
+    return Response.json({ error: "File is empty" }, { status: 400 });
+  }
+
+  // File size limit
+  if (file.size > MAX_FILE_SIZE) {
+    return Response.json({ error: "File too large (max 10MB)" }, { status: 400 });
+  }
+
+  // File type allowlist
+  if (!ALLOWED_FILE_TYPES.has(file.type)) {
+    return Response.json({ error: "File type not supported" }, { status: 400 });
+  }
+
+  // Validate and sanitize name field
+  const name = rawName ? rawName.trim().slice(0, MAX_NAME_LENGTH) : null;
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const fileKey = `${userId}/${randomUUID()}-${file.name}`;

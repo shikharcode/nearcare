@@ -49,9 +49,27 @@ export async function POST(request: Request) {
   return Response.json({ success: true });
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   const { userId } = await auth();
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Request body required" }, { status: 400 });
+  }
+
+  if (
+    !body ||
+    typeof body !== "object" ||
+    (body as Record<string, unknown>).confirm !== "DELETE"
+  ) {
+    return Response.json(
+      { error: 'Confirmation required: send { "confirm": "DELETE" }' },
+      { status: 400 }
+    );
+  }
 
   // Collect document R2 keys before deleting rows
   const userDocs = await db

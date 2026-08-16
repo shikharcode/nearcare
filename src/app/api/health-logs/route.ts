@@ -21,23 +21,64 @@ export async function GET(request: Request) {
   return Response.json(logs);
 }
 
+function sanitizeIntRange(val: unknown, min: number, max: number): number | null {
+  if (val === undefined || val === null) return null;
+  const n = Number(val);
+  if (!Number.isInteger(n) || n < min || n > max) return null;
+  return n;
+}
+
+function sanitizeNumberRange(val: unknown, min: number, max: number): number | null {
+  if (val === undefined || val === null) return null;
+  const n = Number(val);
+  if (isNaN(n) || n < min || n > max) return null;
+  return n;
+}
+
+function sanitizeString(val: unknown, maxLen: number): string | null {
+  if (val === undefined || val === null) return null;
+  if (typeof val !== "string") return null;
+  const trimmed = val.trim();
+  return trimmed.length <= maxLen ? trimmed : null;
+}
+
 export async function POST(request: Request) {
   const { userId } = await auth();
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const date = body.date || today();
+
+  // Validate/sanitize date
+  const rawDate = body.date;
+  const date =
+    typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+      ? rawDate
+      : today();
+
+  // Sanitize all health fields
+  const mood             = sanitizeIntRange(body.mood, 1, 5);
+  const energy           = sanitizeIntRange(body.energy, 1, 5);
+  const sleep            = sanitizeNumberRange(body.sleep, 0, 24);
+  const heartRate        = sanitizeIntRange(body.heartRate, 20, 300);
+  const systolic         = sanitizeIntRange(body.systolic, 40, 300);
+  const diastolic        = sanitizeIntRange(body.diastolic, 40, 300);
+  const bloodSugar       = sanitizeNumberRange(body.bloodSugar, 20, 600);
+  const temperature      = sanitizeNumberRange(body.temperature, 30, 45);
+  const oxygenSaturation = sanitizeIntRange(body.oxygenSaturation, 50, 100);
+  const painLevel        = sanitizeIntRange(body.painLevel, 0, 10);
+  const symptoms         = sanitizeString(body.symptoms, 1000);
+  const notes            = sanitizeString(body.notes, 1000);
 
   await db.insert(users).values({ id: userId, email: "" }).onConflictDoNothing();
 
   const [log] = await db.insert(healthLogs).values({
     userId, date,
-    mood: body.mood, energy: body.energy, sleep: body.sleep, water: body.water,
-    exercise: body.exercise, steps: body.steps, weight: body.weight,
-    heartRate: body.heartRate, systolic: body.systolic, diastolic: body.diastolic,
-    bloodSugar: body.bloodSugar, temperature: body.temperature,
-    oxygenSaturation: body.oxygenSaturation, calories: body.calories,
-    symptoms: body.symptoms, notes: body.notes, painLevel: body.painLevel,
+    mood, energy, sleep,
+    water: body.water, exercise: body.exercise, steps: body.steps, weight: body.weight,
+    heartRate, systolic, diastolic,
+    bloodSugar, temperature,
+    oxygenSaturation, calories: body.calories,
+    symptoms, notes, painLevel,
   }).returning();
 
   const alerts = checkThresholds(body, { exerciseMinutes: body.exercise ?? null });
