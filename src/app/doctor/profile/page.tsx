@@ -282,7 +282,7 @@ export default function DoctorProfilePage() {
       </div>
 
       {/* Blue portal banner */}
-      <div className="mb-6 flex items-center justify-between gap-4 px-4 py-3 bg-blue-600 dark:bg-blue-700 rounded-xl text-white">
+      <div className="mb-4 flex items-center justify-between gap-4 px-4 py-3 bg-blue-600 dark:bg-blue-700 rounded-xl text-white">
         <div className="flex items-center gap-2">
           <Stethoscope className="h-4 w-4 flex-shrink-0" />
           <span className="text-sm font-medium">You are in Doctor Portal</span>
@@ -295,6 +295,20 @@ export default function DoctorProfilePage() {
           <ExternalLink className="h-3.5 w-3.5" />
         </Link>
       </div>
+
+      {/* Verification status banner */}
+      {!loading && !isNew && (
+        <div className="mb-6 flex items-start gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl">
+          <span className="text-amber-500 mt-0.5 flex-shrink-0">⏳</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Verification Pending</p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+              Your profile is under review. Once verified, a ✓ badge will appear next to your name for patients.
+              Email <a href="mailto:verify@nearcare.app" className="underline font-medium">verify@nearcare.app</a> with your medical registration number to expedite.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* New profile setup banner */}
       {!loading && isNew && (
