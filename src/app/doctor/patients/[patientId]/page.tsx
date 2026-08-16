@@ -1048,6 +1048,67 @@ export default function PatientDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Print Prescription */}
+            {myPrescriptions.filter(m => m.isActive).length > 0 && (
+              <div>
+                <SectionLabel>Print Prescription</SectionLabel>
+                <div className="rounded-2xl border border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      Generate a printable prescription for {patient.name || patient.email}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Includes all active medications, doctor details, date
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const w = window.open("", "_blank");
+                      if (!w) return;
+                      const meds = myPrescriptions.filter(m => m.isActive);
+                      w.document.write(`<!DOCTYPE html><html><head><title>Prescription</title>
+                        <style>
+                          body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; color: #111; }
+                          .header { border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
+                          .logo { font-size: 22px; font-weight: 800; color: #2563eb; }
+                          .patient-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; }
+                          .rx-symbol { font-size: 28px; font-weight: 700; color: #2563eb; margin-bottom: 12px; }
+                          .med-row { border-bottom: 1px solid #f1f5f9; padding: 10px 0; }
+                          .med-name { font-size: 15px; font-weight: 600; }
+                          .med-detail { font-size: 13px; color: #555; margin-top: 2px; }
+                          .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 12px; color: #888; }
+                          .sig-line { border-top: 1px solid #111; width: 200px; margin-top: 48px; padding-top: 4px; font-size: 12px; }
+                          @media print { body { padding: 20px; } }
+                        </style></head><body>
+                        <div class="header"><div class="logo">NearCare — Digital Prescription</div></div>
+                        <div class="patient-box">
+                          <strong>Patient:</strong> ${patient.name || patient.email}<br/>
+                          ${patient.bloodType ? `<strong>Blood Type:</strong> ${patient.bloodType}<br/>` : ""}
+                          ${patient.allergies ? `<strong>Allergies:</strong> ${patient.allergies}<br/>` : ""}
+                          <strong>Date:</strong> ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                        </div>
+                        <div class="rx-symbol">℞</div>
+                        ${meds.map((m, i) => `
+                          <div class="med-row">
+                            <div class="med-name">${i + 1}. ${m.name}${m.dosage ? ` — ${m.dosage}` : ""}</div>
+                            <div class="med-detail">${m.frequency || "As directed"}${m.notes ? ` · ${m.notes}` : ""}</div>
+                          </div>`).join("")}
+                        <div class="sig-line">Doctor's Signature</div>
+                        <div class="footer">Generated via NearCare · nearcare.vercel.app</div>
+                      </body></html>`);
+                      w.document.close();
+                      w.print();
+                    }}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Print Prescription
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </TabsContent>
 
