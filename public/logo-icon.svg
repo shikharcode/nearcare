@@ -1,0 +1,34 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1d4ed8"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="pulse" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+      <stop offset="50%" style="stop-color:#ffffff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow -->
+  <rect width="512" height="512" rx="110" fill="rgba(255,255,255,0.04)"/>
+
+  <!-- Heart shape (filled, white) -->
+  <path d="M256 370
+    C256 370 130 290 130 210
+    C130 168 163 140 200 140
+    C222 140 242 152 256 170
+    C270 152 290 140 312 140
+    C349 140 382 168 382 210
+    C382 290 256 370 256 370Z"
+    fill="white" fill-opacity="0.95"/>
+
+  <!-- ECG / pulse line through heart -->
+  <path d="M155 215 L195 215 L215 175 L235 255 L252 195 L268 215 L358 215"
+    stroke="url(#pulse)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"
+    fill="none"/>
+</svg>

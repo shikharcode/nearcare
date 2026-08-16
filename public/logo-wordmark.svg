@@ -1,0 +1,56 @@
+<svg width="1200" height="400" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1d4ed8"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="pulse" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.5"/>
+      <stop offset="50%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.5"/>
+    </linearGradient>
+    <linearGradient id="textgrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1d4ed8"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="400" fill="#ffffff"/>
+
+  <!-- Icon background -->
+  <rect x="40" y="60" width="280" height="280" rx="60" fill="url(#bg)"/>
+
+  <!-- Heart -->
+  <path d="M180 310
+    C180 310 80 245 80 178
+    C80 145 107 122 137 122
+    C154 122 169 131 180 145
+    C191 131 206 122 223 122
+    C253 122 280 145 280 178
+    C280 245 180 310 180 310Z"
+    fill="white" fill-opacity="0.95"/>
+
+  <!-- ECG pulse line -->
+  <path d="M88 182 L118 182 L133 155 L148 210 L160 168 L172 182 L272 182"
+    stroke="url(#pulse)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"
+    fill="none"/>
+
+  <!-- "Near" text -->
+  <text x="360" y="230"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif"
+    font-size="130" font-weight="800" letter-spacing="-4"
+    fill="url(#textgrad)">Near</text>
+
+  <!-- "Care" text — slightly lighter weight -->
+  <text x="710" y="230"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif"
+    font-size="130" font-weight="300" letter-spacing="-4"
+    fill="#1e293b">Care</text>
+
+  <!-- Tagline -->
+  <text x="362" y="290"
+    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif"
+    font-size="28" font-weight="400" letter-spacing="6"
+    fill="#94a3b8">YOUR PERSONAL HEALTH OS</text>
+</svg>

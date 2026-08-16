@@ -1,25 +1,27 @@
 {
   "name": "NearCare — Personal Health OS",
   "short_name": "NearCare",
-  "description": "Track your health, medications, and medical history",
+  "description": "AI-powered health tracking, family alerts, and doctor portal for Indian families",
   "id": "/dashboard",
   "start_url": "/dashboard",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#0f1629",
   "theme_color": "#2563eb",
   "orientation": "portrait",
   "icons": [
+    { "src": "/favicon-16.png", "sizes": "16x16", "type": "image/png" },
+    { "src": "/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
-  "screenshots": [
-    { "src": "/screenshot-dashboard.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide" }
-  ],
   "shortcuts": [
-    { "name": "Daily Check-in", "short_name": "Check In", "url": "/dashboard/checkin" },
-    { "name": "Health Log", "short_name": "Log", "url": "/dashboard/health-log" },
-    { "name": "Medications", "short_name": "Meds", "url": "/dashboard/medications" }
+    { "name": "Daily Check-in", "short_name": "Check In", "url": "/dashboard/checkin", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Health Log", "short_name": "Log", "url": "/dashboard/health-log", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Medications", "short_name": "Meds", "url": "/dashboard/medications", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
   ],
   "categories": ["health", "medical", "lifestyle"],
-  "lang": "en-US"
+  "lang": "en-IN",
+  "dir": "ltr"
 }
