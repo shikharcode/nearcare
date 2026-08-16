@@ -143,6 +143,22 @@ export const doctorNotes = pgTable("doctor_notes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const doctorManagedPatients = pgTable("doctor_managed_patients", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  doctorUserId: text("doctor_user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  dateOfBirth: text("date_of_birth"),
+  phone: text("phone"),
+  bloodType: text("blood_type"),
+  allergies: text("allergies"),
+  emergencyContact: text("emergency_contact"),
+  claimToken: text("claim_token").notNull().unique(),
+  claimedAt: timestamp("claimed_at"),
+  claimedByUserId: text("claimed_by_user_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const caregiverAccess = pgTable("caregiver_access", {
   id: uuid("id").defaultRandom().primaryKey(),
   patientUserId: text("patient_user_id").notNull().references(() => users.id),

@@ -14,6 +14,8 @@ const publicPaths = [
   "/security",
   "/offline",
   "/doctor-invite/",
+  "/claim/",
+  "/api/claim/",
 ];
 
 export default clerkMiddleware(async (auth, request) => {

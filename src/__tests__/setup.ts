@@ -27,13 +27,14 @@ vi.mock("@clerk/nextjs/server", () => ({
 vi.mock("@/db", () => {
   const limit = vi.fn(() => Promise.resolve([]))
   const orderBy = vi.fn(() => ({ limit }))
-  const selectWhere = vi.fn(() => ({ orderBy }))
+  const selectWhere = vi.fn(() => ({ orderBy, limit }))
   const from = vi.fn(() => ({ where: selectWhere }))
   const select = vi.fn(() => ({ from }))
 
   const returning = vi.fn(() => Promise.resolve([{}]))
   const onConflictDoNothing = vi.fn(() => Promise.resolve())
-  const values = vi.fn(() => ({ returning, onConflictDoNothing }))
+  const onConflictDoUpdate = vi.fn(() => ({ returning }))
+  const values = vi.fn(() => ({ returning, onConflictDoNothing, onConflictDoUpdate }))
   const insert = vi.fn(() => ({ values }))
 
   const updateReturning = vi.fn(() => Promise.resolve([{}]))
@@ -49,7 +50,16 @@ vi.mock("@/db", () => {
   }
 })
 
-// Mock Resend
+// Mock DB schema tables (add any table used in routes here)
+vi.mock("@/db/schema", async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>
+  return {
+    ...actual,
+    doctorNotes: actual.doctorNotes ?? {},
+    doctorManagedPatients: actual.doctorManagedPatients ?? {},
+    caregiverAccess: actual.caregiverAccess ?? {},
+  }
+})
 vi.mock("resend", () => ({
   Resend: vi.fn(() => ({
     emails: { send: vi.fn(() => Promise.resolve({ id: "email_test" })) },

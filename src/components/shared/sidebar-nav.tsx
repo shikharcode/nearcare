@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Sparkles,
 } from "lucide-react";
 import {
   Sheet,
@@ -129,6 +130,12 @@ const moreSheetSections = [
       { href: "/dashboard/passport", label: "Passport", icon: FileHeart, color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400" },
       { href: "/dashboard/profile/abha", label: "ABHA", icon: ShieldCheck, color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400" },
       { href: "/dashboard/import", label: "Import Data", icon: Download, color: "bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400" },
+    ],
+  },
+  {
+    label: "PLATFORM",
+    items: [
+      { href: "/dashboard/features", label: "Features", icon: Sparkles, color: "bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400" },
     ],
   },
 ];
@@ -403,6 +410,22 @@ export function SidebarNav({ mobile }: { mobile?: boolean }) {
           );
         })}
       </nav>
+
+      {/* Features */}
+      <div className="px-3 pb-1">
+        <Link
+          href="/dashboard/features"
+          className={cn(
+            "flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px]",
+            pathname === "/dashboard/features"
+              ? "bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800"
+              : "text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white border border-transparent"
+          )}
+        >
+          <Sparkles className="h-5 w-5 flex-shrink-0" />
+          All Features
+        </Link>
+      </div>
 
       {/* Doctor Portal */}
       <div className="px-3 pb-3">

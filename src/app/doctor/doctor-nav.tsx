@@ -3,12 +3,13 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, User } from "lucide-react";
+import { LayoutDashboard, Users, User, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/doctor", label: "Dashboard", icon: LayoutDashboard },
   { href: "/doctor/patients", label: "My Patients", icon: Users },
+  { href: "/doctor/patients/managed", label: "Offline Patients", icon: UserPlus },
   { href: "/doctor/profile", label: "My Profile", icon: User },
 ];
 
